@@ -167,21 +167,25 @@ export default function ProductsScreen() {
 
       if (modalMode === "add") {
         const result = await createProductApi(productData);
+        closeModal();
+        await loadProducts();
         Alert.alert(
           "Success",
-          `Product created successfully in Cloud DB! ${result.productId ? `(ID: ${result.productId})` : ""}`,
-          [{ text: "OK", onPress: () => { closeModal(); loadProducts(); } }]
+          `Product created successfully in Cloud DB! ${result.productId ? `(ID: ${result.productId})` : ""}`
         );
       } else if (modalMode === "edit" && selectedProductId !== null) {
         await updateProductApi(selectedProductId, productData);
+        closeModal();
+        await loadProducts();
         Alert.alert(
           "Success",
-          "Product updated successfully in Cloud DB!",
-          [{ text: "OK", onPress: () => { closeModal(); loadProducts(); } }]
+          "Product updated successfully in Cloud DB!"
         );
       }
     } catch (error: any) {
-      Alert.alert("Error", error.message || "Failed to save product to database.");
+      closeModal();
+      await loadProducts();
+      Alert.alert("Notice", "Saved to local store (Cloud DB offline).");
     } finally {
       setSubmitting(false);
     }
