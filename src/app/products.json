@@ -1,0 +1,27 @@
+[
+  {
+    "id": "1",
+    "name": "Logitech G PRO X SUPERLIGHT Wireless Gaming Mouse",
+    "price": 4290,
+    "category": "Gaming Mouse",
+    "image": "mouse.jpg",
+    "description": "เมาส์เกมมิ่งไร้สายระดับโปร น้ำหนักเบาพิเศษ เซนเซอร์ HERO 25K แม่นยำสูง"
+  },
+  {
+    "id": "2",
+    "name": "HyperX Cloud III Wireless Gaming Headset",
+    "price": 3990,
+    "category": "Gaming Headset",
+    "image": "headset.webp",
+    "description": "หูฟังเกมมิ่งไร้สาย ระบบเสียง DTS Spatial Audio ไดรเวอร์ 53 มม. แบตเตอรี่ยาวนาน 120 ชม."
+  },
+  {
+    "id": "3",
+    "name": "MEZZON Wireless RGB Mechanical Keyboard",
+    "price": 1890,
+    "category": "Gaming Keyboard",
+    "image": "keyboard.jpg",
+    "description": "คีย์บอร์ดเกมมิ่งไร้สาย ไฟ RGB สวิตช์ Mechanical พร้อมปุ่ม Knob ปรับระดับเสียง"
+  }
+]
+
