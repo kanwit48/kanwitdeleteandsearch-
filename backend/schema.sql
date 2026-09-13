@@ -1,30 +1,29 @@
-﻿-- ============================================================================
+-- ============================================================================
 -- SQL Schema & Sample Data for Cloud MySQL Database
 -- Course: Internet Programming (React Native + Cloud DB)
--- phpMyAdmin URL: http://119.59.102.161/nindamdb
+-- Database: ip_std6730251417
 -- ============================================================================
 
--- 1. Create Table `products` / `inventory`
 CREATE TABLE IF NOT EXISTS `products` (
-  `id` INT NOT NULL AUTO_INCREMENT,
-  `name` VARCHAR(150) NOT NULL,
-  `stock` INT DEFAULT 0,
-  `category` VARCHAR(100) DEFAULT NULL,
-  `location` VARCHAR(100) DEFAULT NULL,
-  `image` VARCHAR(255) DEFAULT NULL,
-  `status` VARCHAR(50) DEFAULT 'Active',
-  `brand` VARCHAR(100) DEFAULT NULL,
-  `sizes` VARCHAR(100) DEFAULT NULL,
-  `productCode` VARCHAR(50) DEFAULT NULL,
-  `orderName` VARCHAR(50) DEFAULT NULL,
-  `lastUpdate` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`)
+  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `name` VARCHAR(255) NOT NULL,
+  `price` DECIMAL(10, 2) NOT NULL,
+  `stock` INT NOT NULL DEFAULT 0,
+  `stock_text` VARCHAR(100),
+  `category` VARCHAR(100),
+  `location_count` INT DEFAULT 1,
+  `location_text` VARCHAR(255),
+  `badge_status` VARCHAR(50) DEFAULT 'In Stock',
+  `rating` DECIMAL(3, 1) DEFAULT 5.0,
+  `image_url` TEXT,
+  `description` TEXT,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 2. Insert 3 Products (Sample Data matching lecture slides)
-INSERT INTO `products` (`id`, `name`, `stock`, `category`, `location`, `image`, `status`, `brand`, `sizes`, `productCode`, `orderName`, `lastUpdate`)
+-- 2. Insert 3 Gaming Gear Products
+INSERT INTO `products` (`id`, `name`, `price`, `stock`, `stock_text`, `category`, `location_count`, `location_text`, `badge_status`, `rating`, `image_url`, `description`)
 VALUES
-(1, 'Unisex T-Shirt White', 0, 'T-shirts', '3 stores', 'http://nindam.sytes.net/std6630202040/Inventory/img/white.jpg', 'Active', 'Unnamed Brand', 'XS, S, M, L, XL, XXL', '119-12', 'SK19-111', NOW()),
-(2, 'Unisex T-Shirt Black', 12, 'T-shirts', '3 stores', 'http://nindam.sytes.net/std6630202040/Inventory/img/black.png', 'Active', 'Unnamed Brand', 'XS, S, M, L, XL, XXL', '119-13', 'SK19-112', NOW()),
-(3, 'Unisex T-Shirt Yellow', 12, 'T-shirts', '3 stores', 'http://nindam.sytes.net/std6630202040/Inventory/img/yellow.jpg', 'Active', 'Unnamed Brand', 'XS, S, M, L, XL, XXL', '119-14', 'SK19-113', NOW())
-ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `stock`=VALUES(`stock`);
+(1, 'HyperX Cloud Alpha Wireless Gaming Headset', 4590.00, 25, '25 in stock', 'Gaming Headset', 2, 'Bangkok Store', 'In Stock', 4.9, 'https://row.hyperx.com/cdn/shop/files/hyperx_cloud_alpha_2_wireless_aj5c7aa_angle_4.jpg?v=1783627902', 'หูฟังเกมมิ่งไร้สาย ไดรเวอร์ Dual Chamber แบตเตอรี่ใช้งานได้ยาวนานถึง 300 ชั่วโมง พร้อมระบบเสียง DTS Spatial Audio'),
+(2, 'MEZZON Wireless RGB Mechanical Keyboard', 1890.00, 14, '14 in stock', 'Gaming Keyboard', 1, 'Main Warehouse', 'In Stock', 4.8, 'https://media.sbdesignsquare.com/media/catalog/product/3/9/39023754-1.jpg', 'คีย์บอร์ดเกมมิ่งไร้สาย Mechanical Full-size ไฟ RGB ปรับแต่งได้ 18 โหมด พร้อมปุ่ม Multi-function Knob'),
+(3, 'Logitech G PRO X SUPERLIGHT Wireless Gaming Mouse', 4290.00, 3, '3 in stock', 'Gaming Mouse', 1, 'Bangkok Store', 'Low in stock', 4.9, 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTlBLsKuJ2lV6B1njgvLjTtkfApV4rfZusJbGmHKuebsw&s=10', 'เมาส์เกมมิ่งไร้สายน้ำหนักเบาพิเศษ เซนเซอร์ HERO 25K ความแม่นยำสูงระดับโปรอีสปอร์ต')
+ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `stock`=VALUES(`stock`), `price`=VALUES(`price`);

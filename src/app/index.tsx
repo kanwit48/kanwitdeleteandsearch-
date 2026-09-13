@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ============================================================================
  * React Native + Cloud DB (Mobile Application Screen)
  * ============================================================================
@@ -161,18 +161,24 @@ export default function ProductsScreen() {
               {/* Product Image */}
               <View style={styles.imageContainer}>
                 <Image
-                  source={{ uri: item.image || DEFAULT_PRODUCT_IMAGE }}
+                  source={{ uri: item.image_url || item.image || DEFAULT_PRODUCT_IMAGE }}
                   style={styles.productImage}
                   resizeMode="contain"
                 />
               </View>
 
-              {/* Details (Stock, Category, Location, Brand, Name) */}
+              {/* Details (Stock, Category, Location, Brand/Price, Name) */}
               <View style={styles.detailsContainer}>
-                <Text style={styles.detailMeta}>Stock: {item.stock} in stock</Text>
+                <Text style={styles.detailMeta}>Stock: {item.stock_text || `${item.stock} in stock`}</Text>
                 <Text style={styles.detailMeta}>Category: {item.category}</Text>
-                <Text style={styles.detailMeta}>Location: {item.location}</Text>
-                <Text style={styles.detailMeta}>Brand: {item.brand || "Unnamed Brand"}</Text>
+                <Text style={styles.detailMeta}>Location: {item.location_text || item.location || "Bangkok Store"}</Text>
+                {item.price ? (
+                  <Text style={[styles.detailMeta, { color: COLORS.primary, fontWeight: "700" }]}>
+                    Price: ฿{Number(item.price).toLocaleString()} {item.rating ? `(⭐ ${item.rating})` : ""}
+                  </Text>
+                ) : (
+                  <Text style={styles.detailMeta}>Brand: {item.brand || "Unnamed Brand"}</Text>
+                )}
                 <Text style={styles.productName}>{item.name}</Text>
               </View>
 
@@ -181,10 +187,14 @@ export default function ProductsScreen() {
                 <View
                   style={[
                     styles.statusBadge,
-                    item.status === "Active" ? styles.badgeActive : styles.badgeInactive,
+                    (item.badge_status === "In Stock" || item.status === "Active")
+                      ? styles.badgeActive
+                      : styles.badgeInactive,
                   ]}
                 >
-                  <Text style={styles.statusBadgeText}>{item.status || "Active"}</Text>
+                  <Text style={styles.statusBadgeText}>
+                    {item.badge_status || item.status || "In Stock"}
+                  </Text>
                 </View>
 
                 <View style={styles.arrowIcon}>

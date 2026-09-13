@@ -10,12 +10,20 @@
 export interface Product {
   id: number | string;
   name: string;
+  price?: number;
   stock: number;
+  stock_text?: string;
   category: string;
-  location: string;
-  image: string;
-  status: string;
-  brand: string;
+  location?: string;
+  location_text?: string;
+  location_count?: number;
+  image?: string;
+  image_url?: string;
+  status?: string;
+  badge_status?: string;
+  rating?: number;
+  description?: string;
+  brand?: string;
   sizes?: string;
   productCode?: string;
   orderName?: string;
@@ -27,49 +35,58 @@ export const SERVER_HOST = "119.59.102.161";
 export const SERVER_PORT = "3103"; // Assigned student port for std6730251417
 export const API_BASE_URL = `http://${SERVER_HOST}:${SERVER_PORT}/api`;
 
-// Default / Fallback Products (Slide 8, 9, 28)
+// Default / Fallback Products (3 Gaming Gear Products from Database)
 export const FALLBACK_CLOUD_PRODUCTS: Product[] = [
   {
-    id: 1,
-    name: "Unisex T-Shirt White",
-    stock: 0,
-    category: "T-shirts",
-    location: "3 stores",
-    image: "http://nindam.sytes.net/std6630202040/Inventory/img/white.jpg",
+    id: "1",
+    name: "HyperX Cloud Alpha Wireless Gaming Headset",
+    price: 4590,
+    stock: 25,
+    stock_text: "25 in stock",
+    category: "Gaming Headset",
+    location_count: 2,
+    location_text: "Bangkok Store",
+    location: "Bangkok Store",
+    badge_status: "In Stock",
     status: "Active",
-    brand: "Unnamed Brand",
-    sizes: "XS, S, M, L, XL, XXL",
-    productCode: "119-12",
-    orderName: "SK19-111",
-    lastUpdate: "2026-01-29 14:39:00",
+    rating: 4.9,
+    image_url: "https://row.hyperx.com/cdn/shop/files/hyperx_cloud_alpha_2_wireless_aj5c7aa_angle_4.jpg?v=1783627902",
+    image: "https://row.hyperx.com/cdn/shop/files/hyperx_cloud_alpha_2_wireless_aj5c7aa_angle_4.jpg?v=1783627902",
+    description: "หูฟังเกมมิ่งไร้สาย ไดรเวอร์ Dual Chamber แบตเตอรี่ใช้งานได้ยาวนานถึง 300 ชั่วโมง พร้อมระบบเสียง DTS Spatial Audio",
   },
   {
-    id: 2,
-    name: "Unisex T-Shirt Black",
-    stock: 12,
-    category: "T-shirts",
-    location: "3 stores",
-    image: "http://nindam.sytes.net/std6630202040/Inventory/img/black.png",
+    id: "2",
+    name: "MEZZON Wireless RGB Mechanical Keyboard",
+    price: 1890,
+    stock: 14,
+    stock_text: "14 in stock",
+    category: "Gaming Keyboard",
+    location_count: 1,
+    location_text: "Main Warehouse",
+    location: "Main Warehouse",
+    badge_status: "In Stock",
     status: "Active",
-    brand: "Unnamed Brand",
-    sizes: "XS, S, M, L, XL, XXL",
-    productCode: "119-13",
-    orderName: "SK19-112",
-    lastUpdate: "2026-01-28 13:45:00",
+    rating: 4.8,
+    image_url: "https://media.sbdesignsquare.com/media/catalog/product/3/9/39023754-1.jpg",
+    image: "https://media.sbdesignsquare.com/media/catalog/product/3/9/39023754-1.jpg",
+    description: "คีย์บอร์ดเกมมิ่งไร้สาย Mechanical Full-size ไฟ RGB ปรับแต่งได้ 18 โหมด พร้อมปุ่ม Multi-function Knob",
   },
   {
-    id: 3,
-    name: "Unisex T-Shirt Yellow",
-    stock: 12,
-    category: "T-shirts",
-    location: "3 stores",
-    image: "http://nindam.sytes.net/std6630202040/Inventory/img/yellow.jpg",
+    id: "3",
+    name: "Logitech G PRO X SUPERLIGHT Wireless Gaming Mouse",
+    price: 4290,
+    stock: 3,
+    stock_text: "3 in stock",
+    category: "Gaming Mouse",
+    location_count: 1,
+    location_text: "Bangkok Store",
+    location: "Bangkok Store",
+    badge_status: "Low in stock",
     status: "Active",
-    brand: "Unnamed Brand",
-    sizes: "XS, S, M, L, XL, XXL",
-    productCode: "119-14",
-    orderName: "SK19-113",
-    lastUpdate: "2026-01-27 15:22:00",
+    rating: 4.9,
+    image_url: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTlBLsKuJ2lV6B1njgvLjTtkfApV4rfZusJbGmHKuebsw&s=10",
+    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTlBLsKuJ2lV6B1njgvLjTtkfApV4rfZusJbGmHKuebsw&s=10",
+    description: "เมาส์เกมมิ่งไร้สายน้ำหนักเบาพิเศษ เซนเซอร์ HERO 25K ความแม่นยำสูงระดับโปรอีสปอร์ต",
   },
 ];
 
