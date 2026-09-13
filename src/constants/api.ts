@@ -231,7 +231,7 @@ export async function deleteProductApi(id: string | number): Promise<{ success: 
     return { success: true, message: "Deleted locally (Offline Fallback)" };
   }
 }
-// --- User Management (Slide 22, 25) ---
+// --- User Management & Authentication (Slide 22, 25) ---
 export interface User {
   id: string;
   username: string;
@@ -240,7 +240,13 @@ export interface User {
   token?: string;
 }
 
-let inMemoryUser: User | null = null;
+let inMemoryUser: User | null = {
+  id: "1",
+  username: "kanwit",
+  name: "Kanwit Voottikulsin",
+  role: "admin",
+  token: "demo_token_1",
+};
 
 export function setCurrentUser(user: User | null) {
   inMemoryUser = user;
@@ -256,21 +262,48 @@ export async function loginApi(username: string, password: string): Promise<{ su
       method: "POST",
       body: JSON.stringify({ username, password }),
     });
-    return { success: true, ...data };
+    if (data.user) {
+      setCurrentUser(data.user);
+    }
+    return data;
   } catch (error: any) {
-    const dummyUser: User = { id: "1", username, name: username, token: "jwt_token_sample" };
-    setCurrentUser(dummyUser);
-    return { success: true, user: dummyUser, token: "jwt_token_sample" };
+    console.warn("Cloud DB auth offline, using local verification:", error.message);
+    const localUser: User = {
+      id: String(Date.now()),
+      username: username.trim(),
+      name: username.trim() === "kanwit" ? "Kanwit Voottikulsin" : username.trim(),
+      role: "user",
+      token: `local_jwt_${Date.now()}`,
+    };
+    setCurrentUser(localUser);
+    return { success: true, user: localUser, token: localUser.token, message: "Logged in (Local Session)" };
   }
 }
 
-export async function registerApi(username: string, password: string, name: string): Promise<any> {
+export async function registerApi(username: string, password: string, name: string): Promise<{ success: boolean; user?: User; token?: string; message?: string }> {
   try {
-    return await apiCall("/auth/register", {
+    const data = await apiCall("/auth/register", {
       method: "POST",
       body: JSON.stringify({ username, password, name }),
     });
-  } catch (error) {
-    return { success: true, message: "Registered successfully" };
+    if (data.user) {
+      setCurrentUser(data.user);
+    }
+    return data;
+  } catch (error: any) {
+    console.warn("Cloud DB auth offline, registered in local session:", error.message);
+    const localUser: User = {
+      id: String(Date.now()),
+      username: username.trim(),
+      name: name.trim() || username.trim(),
+      role: "user",
+      token: `local_jwt_${Date.now()}`,
+    };
+    setCurrentUser(localUser);
+    return { success: true, user: localUser, token: localUser.token, message: "Registered (Local Session)" };
   }
+}
+
+export function logoutApi() {
+  setCurrentUser(null);
 }

@@ -1,9 +1,9 @@
 /**
  * ============================================================================
- * React Native + Cloud DB (Add + Edit Product Mobile Application)
+ * React Native + Cloud DB (Delete + Search + Login/Sign Up)
  * ============================================================================
  * Course: Internet Programming - Kasetsart University Sriracha Campus
- * Screen: Products List with Add & Edit Modal Dialogs
+ * Screen: Products Management with Live Search, Delete, and Authentication
  * ============================================================================
  */
 
@@ -30,11 +30,15 @@ import { Ionicons } from "@expo/vector-icons";
 import * as SplashScreen from "expo-splash-screen";
 import {
   Product,
+  User,
   fetchProductsApi,
   createProductApi,
   updateProductApi,
   deleteProductApi,
-  API_BASE_URL,
+  loginApi,
+  registerApi,
+  logoutApi,
+  getCurrentUser,
   DEFAULT_PRODUCT_IMAGE,
 } from "@/constants/api";
 
@@ -53,14 +57,26 @@ const COLORS = {
   inputBg: "#F8FAFC",
 };
 
+const CATEGORIES = ["All", "Gaming Headset", "Gaming Keyboard", "Gaming Mouse", "Apparel"];
+
 export default function ProductsScreen() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("All");
   const [activeTab, setActiveTab] = useState("products");
 
-  // Modal & Form State (Slide 7, 9, 12)
+  // User & Auth State
+  const [currentUser, setCurrentUserState] = useState<User | null>(getCurrentUser());
+  const [authModalVisible, setAuthModalVisible] = useState(false);
+  const [authTab, setAuthTab] = useState<"signin" | "signup">("signin");
+  const [authUsername, setAuthUsername] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authName, setAuthName] = useState("");
+  const [authLoading, setAuthLoading] = useState(false);
+
+  // Product Add/Edit Modal & Form State
   const [modalMode, setModalMode] = useState<"add" | "edit" | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [selectedProductId, setSelectedProductId] = useState<string | number | null>(null);
@@ -99,7 +115,68 @@ export default function ProductsScreen() {
     loadProducts();
   };
 
-  // Open Add Product Modal (Slide 12)
+  // --- Auth Handlers (Sign In & Sign Up) ---
+  const handleAuthSubmit = async () => {
+    if (!authUsername.trim() || !authPassword.trim()) {
+      Alert.alert("Validation Error", "Please enter both username and password.");
+      return;
+    }
+
+    if (authTab === "signup" && !authName.trim()) {
+      Alert.alert("Validation Error", "Please enter your full name.");
+      return;
+    }
+
+    setAuthLoading(true);
+    try {
+      if (authTab === "signin") {
+        const res = await loginApi(authUsername.trim(), authPassword.trim());
+        if (res.success && res.user) {
+          setCurrentUserState(res.user);
+          setAuthModalVisible(false);
+          setAuthUsername("");
+          setAuthPassword("");
+          Alert.alert("Welcome Back!", `Signed in as ${res.user.name || res.user.username}`);
+        } else {
+          Alert.alert("Sign In Failed", res.message || "Invalid username or password.");
+        }
+      } else {
+        const res = await registerApi(authUsername.trim(), authPassword.trim(), authName.trim());
+        if (res.success && res.user) {
+          setCurrentUserState(res.user);
+          setAuthModalVisible(false);
+          setAuthUsername("");
+          setAuthPassword("");
+          setAuthName("");
+          Alert.alert("Welcome!", `Account created successfully for ${res.user.name}`);
+        } else {
+          Alert.alert("Sign Up Failed", res.message || "Could not register account.");
+        }
+      }
+    } catch (err: any) {
+      Alert.alert("Authentication Notice", err.message || "Auth completed in local session.");
+      setAuthModalVisible(false);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Sign Out",
+        style: "destructive",
+        onPress: () => {
+          logoutApi();
+          setCurrentUserState(null);
+          Alert.alert("Signed Out", "You have been signed out.");
+        },
+      },
+    ]);
+  };
+
+  // --- Add / Edit Product Handlers ---
   const openAddModal = () => {
     setModalMode("add");
     setSelectedProductId(null);
@@ -114,7 +191,6 @@ export default function ProductsScreen() {
     setBadgeStatus("In Stock");
   };
 
-  // Open Edit Product Modal (Slide 9)
   const openEditModal = (product: Product) => {
     setModalMode("edit");
     setSelectedProductId(product.id);
@@ -134,7 +210,6 @@ export default function ProductsScreen() {
     setSelectedProductId(null);
   };
 
-  // Handle Form Submit (Add or Edit)
   const handleSaveProduct = async () => {
     if (!name.trim()) {
       Alert.alert("Validation Error", "Please enter a product name.");
@@ -177,10 +252,7 @@ export default function ProductsScreen() {
         await updateProductApi(selectedProductId, productData);
         closeModal();
         await loadProducts();
-        Alert.alert(
-          "Success",
-          "Product updated successfully in Cloud DB!"
-        );
+        Alert.alert("Success", "Product updated successfully in Cloud DB!");
       }
     } catch (error: any) {
       closeModal();
@@ -191,11 +263,11 @@ export default function ProductsScreen() {
     }
   };
 
-  // Handle Delete Product
+  // --- Delete Product Handler (Slide & Requirements) ---
   const handleDeleteProduct = (product: Product) => {
     Alert.alert(
       "Delete Product",
-      `Are you sure you want to delete "${product.name}"?`,
+      `Are you sure you want to delete "${product.name}" from Cloud Database?`,
       [
         { text: "Cancel", style: "cancel" },
         {
@@ -204,8 +276,8 @@ export default function ProductsScreen() {
           onPress: async () => {
             try {
               await deleteProductApi(product.id);
-              Alert.alert("Deleted", "Product has been removed from database.");
-              loadProducts();
+              await loadProducts();
+              Alert.alert("Deleted", `"${product.name}" has been removed from database.`);
             } catch (err: any) {
               Alert.alert("Error", err.message || "Could not delete product.");
             }
@@ -215,48 +287,88 @@ export default function ProductsScreen() {
     );
   };
 
-  // Search filter
-  const filteredProducts = products.filter((item) =>
-    item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.category.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // --- Search & Category Filtering ---
+  const filteredProducts = products.filter((item) => {
+    const matchesSearch =
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (item.brand && item.brand.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
 
-  const handleProductPress = (product: Product) => {
-    openEditModal(product);
-  };
+    const matchesCategory =
+      selectedCategory === "All" || item.category.toLowerCase() === selectedCategory.toLowerCase();
+
+    return matchesSearch && matchesCategory;
+  });
 
   return (
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.card} />
 
       {/* ================================================================== */}
-      {/* 1. TOP NAVIGATION HEADER (Slide 28) */}
+      {/* 1. TOP NAVIGATION HEADER WITH USER PROFILE & AUTH (Slide 28) */}
       {/* ================================================================== */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.headerIconBtn}>
-          <Ionicons name="menu-outline" size={24} color={COLORS.text} />
-        </TouchableOpacity>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity style={styles.headerIconBtn}>
+            <Ionicons name="menu-outline" size={24} color={COLORS.text} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Products</Text>
+        </View>
 
-        <Text style={styles.headerTitle}>Products</Text>
-
-        <TouchableOpacity style={styles.profileBtn}>
-          <Ionicons name="person" size={18} color="#FFFFFF" />
-        </TouchableOpacity>
+        {/* User Profile / Login Button */}
+        <View style={styles.headerRight}>
+          {currentUser ? (
+            <TouchableOpacity
+              style={styles.userBadgeBtn}
+              onPress={handleLogout}
+              activeOpacity={0.8}
+            >
+              <View style={styles.userAvatar}>
+                <Text style={styles.userAvatarText}>
+                  {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : "U"}
+                </Text>
+              </View>
+              <View style={styles.userInfoBox}>
+                <Text style={styles.userNameText} numberOfLines={1}>
+                  {currentUser.name || currentUser.username}
+                </Text>
+                <Text style={styles.userRoleText}>Sign out</Text>
+              </View>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={styles.signInBtn}
+              onPress={() => {
+                setAuthTab("signin");
+                setAuthModalVisible(true);
+              }}
+            >
+              <Ionicons name="log-in-outline" size={16} color="#FFFFFF" />
+              <Text style={styles.signInBtnText}>Sign In</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* ================================================================== */}
-      {/* SEARCH & QUICK ACTION BAR (Slide 28) */}
+      {/* 2. SEARCH & ACTION BAR (Live Search Filter) */}
       {/* ================================================================== */}
       <View style={styles.actionRow}>
         <View style={styles.searchBox}>
           <Ionicons name="search" size={18} color={COLORS.textSecondary} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search products..."
+            placeholder="Search products by name, category, brand..."
             placeholderTextColor={COLORS.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
           />
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchQuery("")}>
+              <Ionicons name="close-circle" size={18} color={COLORS.textSecondary} />
+            </TouchableOpacity>
+          )}
         </View>
 
         <TouchableOpacity style={styles.addBtn} onPress={openAddModal}>
@@ -264,17 +376,59 @@ export default function ProductsScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.refreshBtn} onPress={onRefresh}>
-          <Text style={styles.refreshBtnText}>Refresh</Text>
+          <Ionicons name="refresh" size={16} color={COLORS.text} />
         </TouchableOpacity>
       </View>
 
+      {/* Quick Category Filter Chips */}
+      <View style={styles.categoryChipsContainer}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsScroll}>
+          {CATEGORIES.map((cat) => (
+            <TouchableOpacity
+              key={cat}
+              style={[
+                styles.categoryChip,
+                selectedCategory === cat && styles.categoryChipActive,
+              ]}
+              onPress={() => setSelectedCategory(cat)}
+            >
+              <Text
+                style={[
+                  styles.categoryChipText,
+                  selectedCategory === cat && styles.categoryChipTextActive,
+                ]}
+              >
+                {cat}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* Search Result Summary */}
+      <View style={styles.resultSummaryRow}>
+        <Text style={styles.resultCountText}>
+          Found {filteredProducts.length} {filteredProducts.length === 1 ? "product" : "products"}
+          {searchQuery ? ` for "${searchQuery}"` : ""}
+        </Text>
+      </View>
+
       {/* ================================================================== */}
-      {/* 2. PRODUCT CARDS (FLATLIST - Slide 28) */}
+      {/* 3. PRODUCT CARDS LIST WITH DELETE & EDIT BUTTONS (FLATLIST) */}
       {/* ================================================================== */}
       {loading ? (
         <View style={styles.centerBox}>
           <ActivityIndicator size="large" color={COLORS.primary} />
           <Text style={styles.loadingText}>Loading products from Cloud DB...</Text>
+        </View>
+      ) : filteredProducts.length === 0 ? (
+        <View style={styles.centerBox}>
+          <Ionicons name="search-outline" size={48} color={COLORS.textSecondary} />
+          <Text style={styles.emptyTitle}>No products found</Text>
+          <Text style={styles.emptySubtitle}>Try adjusting your search query or category filter</Text>
+          <TouchableOpacity style={styles.resetSearchBtn} onPress={() => { setSearchQuery(""); setSelectedCategory("All"); }}>
+            <Text style={styles.resetSearchBtnText}>Reset Filters</Text>
+          </TouchableOpacity>
         </View>
       ) : (
         <FlatList
@@ -296,7 +450,7 @@ export default function ProductsScreen() {
                 />
               </View>
 
-              {/* Details (Stock, Category, Location, Brand/Price, Name) */}
+              {/* Details */}
               <View style={styles.detailsContainer}>
                 <Text style={styles.detailMeta}>Stock: {item.stock_text || `${item.stock} in stock`}</Text>
                 <Text style={styles.detailMeta}>Category: {item.category}</Text>
@@ -308,10 +462,10 @@ export default function ProductsScreen() {
                 ) : (
                   <Text style={styles.detailMeta}>Brand: {item.brand || "Unnamed Brand"}</Text>
                 )}
-                <Text style={styles.productName}>{item.name}</Text>
+                <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
               </View>
 
-              {/* Status Badge & Actions */}
+              {/* Action Column (Badge + Edit/Delete Buttons) */}
               <View style={styles.badgeColumn}>
                 <View
                   style={[
@@ -351,7 +505,121 @@ export default function ProductsScreen() {
       )}
 
       {/* ================================================================== */}
-      {/* 3. ADD / EDIT PRODUCT MODAL FORM (Slide 7, 9, 12) */}
+      {/* 4. AUTHENTICATION MODAL (SIGN IN & SIGN UP) */}
+      {/* ================================================================== */}
+      <Modal
+        visible={authModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setAuthModalVisible(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.modalOverlay}
+        >
+          <View style={styles.authModalContent}>
+            {/* Modal Header */}
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {authTab === "signin" ? "Sign In to Account" : "Create New Account"}
+              </Text>
+              <TouchableOpacity onPress={() => setAuthModalVisible(false)} style={styles.modalBackBtn}>
+                <Ionicons name="close" size={24} color={COLORS.text} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Auth Segmented Tab Control */}
+            <View style={styles.authTabSwitch}>
+              <TouchableOpacity
+                style={[styles.authTabBtn, authTab === "signin" && styles.authTabBtnActive]}
+                onPress={() => setAuthTab("signin")}
+              >
+                <Text style={[styles.authTabBtnText, authTab === "signin" && styles.authTabBtnTextActive]}>
+                  Sign In
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.authTabBtn, authTab === "signup" && styles.authTabBtnActive]}
+                onPress={() => setAuthTab("signup")}
+              >
+                <Text style={[styles.authTabBtnText, authTab === "signup" && styles.authTabBtnTextActive]}>
+                  Sign Up
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.formScroll}>
+              {/* Full Name (Only for Sign Up) */}
+              {authTab === "signup" && (
+                <>
+                  <Text style={styles.label}>Full Name <Text style={styles.required}>*</Text></Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter your name (e.g. Kanwit)"
+                    placeholderTextColor={COLORS.textSecondary}
+                    value={authName}
+                    onChangeText={setAuthName}
+                  />
+                </>
+              )}
+
+              {/* Username */}
+              <Text style={styles.label}>Username <Text style={styles.required}>*</Text></Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter username (e.g. kanwit)"
+                placeholderTextColor={COLORS.textSecondary}
+                autoCapitalize="none"
+                value={authUsername}
+                onChangeText={setAuthUsername}
+              />
+
+              {/* Password */}
+              <Text style={styles.label}>Password <Text style={styles.required}>*</Text></Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter password"
+                placeholderTextColor={COLORS.textSecondary}
+                secureTextEntry={true}
+                value={authPassword}
+                onChangeText={setAuthPassword}
+              />
+
+              {/* Quick Demo Credentials Info */}
+              {authTab === "signin" && (
+                <TouchableOpacity
+                  style={styles.demoFillBtn}
+                  onPress={() => {
+                    setAuthUsername("kanwit");
+                    setAuthPassword("123456");
+                  }}
+                >
+                  <Ionicons name="key-outline" size={14} color={COLORS.primary} />
+                  <Text style={styles.demoFillBtnText}>Auto-fill Demo Credentials (kanwit / 123456)</Text>
+                </TouchableOpacity>
+              )}
+
+              {/* Submit Auth Button */}
+              <TouchableOpacity
+                style={[styles.submitBtn, authLoading && { opacity: 0.7 }]}
+                onPress={handleAuthSubmit}
+                disabled={authLoading}
+              >
+                {authLoading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={styles.submitBtnText}>
+                    {authTab === "signin" ? "Sign In" : "Create Account"}
+                  </Text>
+                )}
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
+      {/* ================================================================== */}
+      {/* 5. ADD / EDIT PRODUCT MODAL FORM (Slide 7, 9, 12) */}
       {/* ================================================================== */}
       <Modal
         visible={modalMode !== null}
@@ -526,7 +794,7 @@ export default function ProductsScreen() {
       </Modal>
 
       {/* ================================================================== */}
-      {/* 4. BOTTOM NAVIGATION TAB BAR (Slide 28) */}
+      {/* 6. BOTTOM NAVIGATION TAB BAR (Slide 28) */}
       {/* ================================================================== */}
       <View style={styles.bottomNav}>
         <TouchableOpacity
@@ -574,17 +842,21 @@ export default function ProductsScreen() {
         <TouchableOpacity
           style={styles.navTab}
           onPress={() => {
-            setActiveTab("categories");
-            Alert.alert("Categories", "Gaming Gear, Apparel, Electronics");
+            if (!currentUser) {
+              setAuthTab("signin");
+              setAuthModalVisible(true);
+            } else {
+              handleLogout();
+            }
           }}
         >
           <Ionicons
-            name={activeTab === "categories" ? "folder" : "folder-outline"}
+            name={currentUser ? "person" : "person-outline"}
             size={22}
-            color={activeTab === "categories" ? COLORS.primary : COLORS.textSecondary}
+            color={currentUser ? COLORS.primary : COLORS.textSecondary}
           />
-          <Text style={[styles.navLabel, activeTab === "categories" && styles.navLabelActive]}>
-            Categories
+          <Text style={[styles.navLabel, currentUser ? styles.navLabelActive : null]}>
+            {currentUser ? "Profile" : "Account"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -608,6 +880,30 @@ const styles = StyleSheet.create({
     color: COLORS.textSecondary,
     fontSize: 14,
   },
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.text,
+    marginTop: 12,
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    marginTop: 4,
+    textAlign: "center",
+  },
+  resetSearchBtn: {
+    marginTop: 14,
+    backgroundColor: COLORS.primaryLight,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  resetSearchBtnText: {
+    color: COLORS.primaryDark,
+    fontSize: 13,
+    fontWeight: "600",
+  },
 
   /* --- Top Navigation Header --- */
   header: {
@@ -615,27 +911,75 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     backgroundColor: COLORS.card,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
+  headerLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   headerIconBtn: {
-    width: 36,
-    justifyContent: "center",
+    padding: 4,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: "700",
     color: COLORS.text,
   },
-  profileBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: COLORS.primary,
-    justifyContent: "center",
+  headerRight: {
+    flexDirection: "row",
     alignItems: "center",
+  },
+  userBadgeBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.primaryLight,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 20,
+    gap: 6,
+  },
+  userAvatar: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: COLORS.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  userAvatarText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  userInfoBox: {
+    maxWidth: 90,
+  },
+  userNameText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: COLORS.primaryDark,
+  },
+  userRoleText: {
+    fontSize: 9,
+    color: COLORS.textSecondary,
+  },
+  signInBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+  },
+  signInBtnText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "700",
   },
 
   /* --- Search & Action Row --- */
@@ -643,11 +987,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 10,
     gap: 8,
     backgroundColor: COLORS.card,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
   },
   searchBox: {
     flex: 1,
@@ -657,12 +999,13 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingHorizontal: 10,
     height: 40,
+    gap: 6,
   },
   searchInput: {
     flex: 1,
-    marginLeft: 6,
     fontSize: 13,
     color: COLORS.text,
+    padding: 0,
   },
   addBtn: {
     backgroundColor: COLORS.primary,
@@ -679,21 +1022,57 @@ const styles = StyleSheet.create({
   },
   refreshBtn: {
     backgroundColor: "#F1F5F9",
-    paddingHorizontal: 12,
+    width: 40,
     height: 40,
     borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
   },
-  refreshBtnText: {
+
+  /* --- Category Chips --- */
+  categoryChipsContainer: {
+    backgroundColor: COLORS.card,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+    paddingBottom: 10,
+  },
+  chipsScroll: {
+    paddingHorizontal: 16,
+    gap: 8,
+  },
+  categoryChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: "#F1F5F9",
+  },
+  categoryChipActive: {
+    backgroundColor: COLORS.primary,
+  },
+  categoryChipText: {
+    fontSize: 12,
     color: COLORS.textSecondary,
-    fontSize: 13,
     fontWeight: "600",
+  },
+  categoryChipTextActive: {
+    color: "#FFFFFF",
+    fontWeight: "700",
+  },
+  resultSummaryRow: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 2,
+  },
+  resultCountText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontWeight: "500",
   },
 
   /* --- List Content & Cards --- */
   listContent: {
     padding: 16,
+    paddingTop: 8,
     gap: 12,
     maxWidth: 800,
     width: "100%",
@@ -709,6 +1088,11 @@ const styles = StyleSheet.create({
     borderColor: COLORS.border,
     alignItems: "center",
     gap: 12,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
+    elevation: 2,
   },
   imageContainer: {
     width: 80,
@@ -776,7 +1160,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FEE2E2",
   },
 
-  /* --- Modal Styles (Slide 7, 9, 12) --- */
+  /* --- Modal Styles --- */
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
@@ -787,6 +1171,13 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: "90%",
+    paddingBottom: 24,
+  },
+  authModalContent: {
+    backgroundColor: COLORS.card,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: "85%",
     paddingBottom: 24,
   },
   modalHeader: {
@@ -805,6 +1196,49 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: "700",
     color: COLORS.text,
+  },
+  authTabSwitch: {
+    flexDirection: "row",
+    marginHorizontal: 16,
+    marginTop: 14,
+    backgroundColor: "#F1F5F9",
+    borderRadius: 10,
+    padding: 4,
+  },
+  authTabBtn: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: "center",
+    borderRadius: 8,
+  },
+  authTabBtnActive: {
+    backgroundColor: COLORS.card,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  authTabBtnText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: COLORS.textSecondary,
+  },
+  authTabBtnTextActive: {
+    color: COLORS.primary,
+    fontWeight: "700",
+  },
+  demoFillBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 12,
+    paddingVertical: 6,
+  },
+  demoFillBtnText: {
+    fontSize: 12,
+    color: COLORS.primary,
+    fontWeight: "600",
   },
   formScroll: {
     padding: 16,

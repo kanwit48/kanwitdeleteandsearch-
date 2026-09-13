@@ -1,9 +1,27 @@
 -- ============================================================================
 -- SQL Schema & Sample Data for Cloud MySQL Database
--- Course: Internet Programming (React Native + Cloud DB)
+-- Course: Internet Programming (React Native + Cloud DB + Auth)
 -- Database: ip_std6730251417
 -- ============================================================================
 
+-- 1. Table: users (Authentication - Login & Sign Up)
+CREATE TABLE IF NOT EXISTS `users` (
+  `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `username` VARCHAR(100) NOT NULL UNIQUE,
+  `password` VARCHAR(255) NOT NULL,
+  `name` VARCHAR(255) NOT NULL,
+  `role` VARCHAR(50) DEFAULT 'user',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Insert Default Demo Users
+INSERT INTO `users` (`username`, `password`, `name`, `role`)
+VALUES
+('kanwit', '123456', 'Kanwit Voottikulsin', 'admin'),
+('user1', '123456', 'Demo User', 'user')
+ON DUPLICATE KEY UPDATE `name`=VALUES(`name`);
+
+-- 2. Table: products (Inventory & Catalog)
 CREATE TABLE IF NOT EXISTS `products` (
   `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `name` VARCHAR(255) NOT NULL,
@@ -20,7 +38,7 @@ CREATE TABLE IF NOT EXISTS `products` (
   `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 2. Insert 3 Gaming Gear Products
+-- Insert 3 Gaming Gear Products
 INSERT INTO `products` (`id`, `name`, `price`, `stock`, `stock_text`, `category`, `location_count`, `location_text`, `badge_status`, `rating`, `image_url`, `description`)
 VALUES
 (1, 'HyperX Cloud Alpha Wireless Gaming Headset', 4590.00, 25, '25 in stock', 'Gaming Headset', 2, 'Bangkok Store', 'In Stock', 4.9, 'https://row.hyperx.com/cdn/shop/files/hyperx_cloud_alpha_2_wireless_aj5c7aa_angle_4.jpg?v=1783627902', 'หูฟังเกมมิ่งไร้สาย ไดรเวอร์ Dual Chamber แบตเตอรี่ใช้งานได้ยาวนานถึง 300 ชั่วโมง พร้อมระบบเสียง DTS Spatial Audio'),
