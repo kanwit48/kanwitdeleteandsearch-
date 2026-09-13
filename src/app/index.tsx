@@ -1,15 +1,4 @@
-﻿/**
- * ============================================================================
- * Kanwit Gaming Gear Shop - หน้าหลัก (Home Screen)
- * ============================================================================
- * โครงสร้างหน้าจอตามโจทย์:
- * 1. เมนูนำทางด้านบน (Top Navigation Header)
- * 2. แสดงรายการสินค้าอย่างน้อย 3 ชิ้น (Hardcoded Product List + Local Assets)
- * 3. เมนูนำทางด้านล่าง (Bottom Navigation Menu)
- * ============================================================================
- */
-
-import React, { useState, useEffect } from "react";
+﻿import React, { useState, useEffect } from "react";
 import {
   FlatList,
   Image,
@@ -20,26 +9,23 @@ import {
   ScrollView,
   StatusBar,
   Alert,
-  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as SplashScreen from "expo-splash-screen";
 import { PRODUCTS, ProductItem } from "@/constants/products";
 
-// --- ชุดสีธีม Gaming Modern ---
 const COLORS = {
-  primary: "#6366F1",        // Indigo
+  primary: "#6366F1",
   primaryDark: "#4F46E5",
   primaryLight: "#EEF2FF",
-  accent: "#EC4899",         // Pink Accent
-  background: "#F8FAFC",     // Slate 50
+  accent: "#EC4899",
+  background: "#F8FAFC",
   card: "#FFFFFF",
-  text: "#0F172A",           // Slate 900
-  textSecondary: "#64748B",  // Slate 500
+  text: "#0F172A",
+  textSecondary: "#64748B",
   border: "#E2E8F0",
   success: "#10B981",
-  warning: "#F59E0B",
   danger: "#EF4444",
 };
 
@@ -49,11 +35,9 @@ export default function HomeScreen() {
   const [activeTab, setActiveTab] = useState<string>("home");
 
   useEffect(() => {
-    // ปิด Splash Screen เมื่อเข้าสู่หน้าแรก
     SplashScreen.hideAsync().catch(() => {});
   }, []);
 
-  // กรองสินค้าตามหมวดหมู่
   const filteredProducts =
     selectedCategory === "All"
       ? PRODUCTS
@@ -61,18 +45,14 @@ export default function HomeScreen() {
 
   const categories = [
     { id: "All", label: "ทั้งหมด (All)", iconType: "ion", icon: "grid-outline" },
-    { id: "Gaming Mouse", label: "เมาส์ (Mouse)", iconType: "mc", icon: "mouse" },
-    { id: "Gaming Headset", label: "หูฟัง (Headset)", iconType: "ion", icon: "headset-outline" },
-    { id: "Gaming Keyboard", label: "คีย์บอร์ด (Keyboard)", iconType: "mc", icon: "keyboard-outline" },
+    { id: "Gaming Mouse", label: "เมาส์", iconType: "mc", icon: "mouse" },
+    { id: "Gaming Headset", label: "หูฟัง", iconType: "ion", icon: "headset-outline" },
+    { id: "Gaming Keyboard", label: "คีย์บอร์ด", iconType: "mc", icon: "keyboard-outline" },
   ];
 
   const handleAddToCart = (product: ProductItem) => {
     setCartCount((prev) => prev + 1);
-    Alert.alert(
-      "เพิ่มสินค้าลงตะกร้าแล้ว",
-      `เพิ่ม "${product.name}" จำนวน 1 ชิ้น เข้าสู่ตะกร้าเรียบร้อยแล้ว`,
-      [{ text: "ตกลง" }]
-    );
+    Alert.alert("เพิ่มสินค้าลงตะกร้าแล้ว", `เพิ่ม "${product.name}" เรียบร้อยแล้ว`);
   };
 
   const handleProductDetail = (product: ProductItem) => {
@@ -90,41 +70,32 @@ export default function HomeScreen() {
     <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.card} />
 
-      {/* ================================================================== */}
-      {/* 1. เมนูนำทางด้านบน (TOP NAVIGATION BAR / HEADER) */}
-      {/* ================================================================== */}
+      {/* 1. TOP NAVIGATION HEADER */}
       <View style={styles.topNav}>
-        {/* เมนูปุ่มด้านซ้าย */}
-        <TouchableOpacity style={styles.iconButton} activeOpacity={0.7}>
-          <Ionicons name="menu-outline" size={26} color={COLORS.text} />
+        <TouchableOpacity style={styles.iconBtn}>
+          <Ionicons name="menu-outline" size={24} color={COLORS.text} />
         </TouchableOpacity>
 
-        {/* ชื่อร้านค้า / โลโก้ */}
         <View style={styles.brandContainer}>
           <View style={styles.logoBadge}>
-            <Ionicons name="game-controller" size={18} color="#FFFFFF" />
+            <Ionicons name="game-controller" size={16} color="#FFF" />
           </View>
           <View>
             <Text style={styles.brandTitle}>KANWIT GAMING</Text>
-            <Text style={styles.brandSubtitle}>Official Gear Store</Text>
+            <Text style={styles.brandSub}>Official Gear Store</Text>
           </View>
         </View>
 
-        {/* ไอคอนแจ้งเตือนและตะกร้าสินค้าด้านขวา */}
         <View style={styles.topRightActions}>
-          <TouchableOpacity style={styles.iconButton} activeOpacity={0.7}>
-            <Ionicons name="notifications-outline" size={22} color={COLORS.text} />
-            <View style={styles.notificationDot} />
+          <TouchableOpacity style={styles.iconBtn}>
+            <Ionicons name="notifications-outline" size={20} color={COLORS.text} />
+            <View style={styles.notifDot} />
           </TouchableOpacity>
-
           <TouchableOpacity
-            style={[styles.iconButton, styles.cartButton]}
-            activeOpacity={0.7}
-            onPress={() =>
-              Alert.alert("ตะกร้าสินค้า", `มีสินค้าในตะกร้าทั้งหมด ${cartCount} ชิ้น`)
-            }
+            style={[styles.iconBtn, styles.cartBtn]}
+            onPress={() => Alert.alert("ตะกร้าสินค้า", `มีสินค้าทั้งหมด ${cartCount} ชิ้น`)}
           >
-            <Ionicons name="cart-outline" size={22} color={COLORS.primary} />
+            <Ionicons name="cart-outline" size={20} color={COLORS.primary} />
             {cartCount > 0 && (
               <View style={styles.cartBadge}>
                 <Text style={styles.cartBadgeText}>{cartCount}</Text>
@@ -134,9 +105,7 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* ================================================================== */}
-      {/* 2. เนื้อหาหลัก และ รายการสินค้า (PRODUCTS DISPLAY) */}
-      {/* ================================================================== */}
+      {/* 2. PRODUCT CATALOGUE */}
       <FlatList
         data={filteredProducts}
         keyExtractor={(item) => item.id}
@@ -144,75 +113,31 @@ export default function HomeScreen() {
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
           <View>
-            {/* แบนเนอร์โปรโมชัน */}
-            <View style={styles.heroBanner}>
-              <View style={styles.heroLeft}>
-                <View style={styles.hotTag}>
-                  <Ionicons name="flame" size={14} color="#FFFFFF" />
-                  <Text style={styles.hotTagText}>PROMOTION</Text>
-                </View>
-                <Text style={styles.heroTitle}>Top Gaming Gears</Text>
-                <Text style={styles.heroSubtitle}>
-                  ยกระดับการเล่นเกมด้วยอุปกรณ์เกมมิ่งเกียร์คุณภาพสูง
-                </Text>
-              </View>
-              <View style={styles.heroRight}>
-                <MaterialCommunityIcons name="lightning-bolt" size={48} color="#FDE047" />
-              </View>
-            </View>
-
-            {/* แถบเมนูเลือกหมวดหมู่สินค้า (Category Navigation Pills) */}
+            {/* Category Filter Pills */}
             <View style={styles.categorySection}>
-              <Text style={styles.sectionHeaderTitle}>หมวดหมู่สินค้า (Categories)</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.categoryList}
-              >
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.catList}>
                 {categories.map((cat) => {
                   const isSelected = selectedCategory === cat.id;
                   return (
                     <TouchableOpacity
                       key={cat.id}
-                      style={[
-                        styles.categoryChip,
-                        isSelected && styles.categoryChipActive,
-                      ]}
+                      style={[styles.catChip, isSelected && styles.catChipActive]}
                       onPress={() => setSelectedCategory(cat.id)}
-                      activeOpacity={0.7}
                     >
                       {cat.iconType === "ion" ? (
-                        <Ionicons
-                          name={cat.icon as any}
-                          size={16}
-                          color={isSelected ? "#FFFFFF" : COLORS.textSecondary}
-                        />
+                        <Ionicons name={cat.icon as any} size={15} color={isSelected ? "#FFF" : COLORS.textSecondary} />
                       ) : (
-                        <MaterialCommunityIcons
-                          name={cat.icon as any}
-                          size={16}
-                          color={isSelected ? "#FFFFFF" : COLORS.textSecondary}
-                        />
+                        <MaterialCommunityIcons name={cat.icon as any} size={15} color={isSelected ? "#FFF" : COLORS.textSecondary} />
                       )}
-                      <Text
-                        style={[
-                          styles.categoryChipText,
-                          isSelected && styles.categoryChipTextActive,
-                        ]}
-                      >
-                        {cat.label}
-                      </Text>
+                      <Text style={[styles.catChipText, isSelected && styles.catChipTextActive]}>{cat.label}</Text>
                     </TouchableOpacity>
                   );
                 })}
               </ScrollView>
             </View>
 
-            {/* หัวข้อรายการสินค้า */}
-            <View style={styles.productsHeaderRow}>
-              <Text style={styles.sectionHeaderTitle}>
-                รายการสินค้าแนะนำ ({filteredProducts.length} รายการ)
-              </Text>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>รายการสินค้าแนะนำ ({filteredProducts.length})</Text>
               <View style={styles.stockBadge}>
                 <Text style={styles.stockBadgeText}>แท้ 100% ประกันศูนย์</Text>
               </View>
@@ -220,87 +145,51 @@ export default function HomeScreen() {
           </View>
         }
         renderItem={({ item }) => (
-          <View style={styles.productCard}>
-            {/* รูปภาพสินค้า */}
-            <TouchableOpacity
-              activeOpacity={0.9}
-              onPress={() => handleProductDetail(item)}
-              style={styles.imageWrapper}
-            >
-              <Image source={item.image} style={styles.productImage} resizeMode="contain" />
+          <View style={styles.card}>
+            <TouchableOpacity style={styles.imgWrap} onPress={() => handleProductDetail(item)}>
+              <Image source={item.image} style={styles.productImg} resizeMode="contain" />
               {item.originalPrice && (
                 <View style={styles.discountBadge}>
-                  <Text style={styles.discountBadgeText}>
+                  <Text style={styles.discountText}>
                     ลด {Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)}%
                   </Text>
                 </View>
               )}
             </TouchableOpacity>
 
-            {/* รายละเอียดสินค้า */}
-            <View style={styles.productInfo}>
-              {/* แบรนด์ & หมวดหมู่ */}
+            <View style={styles.cardBody}>
               <View style={styles.metaRow}>
-                <View style={styles.categoryTag}>
-                  <Text style={styles.categoryTagText}>{item.category}</Text>
+                <View style={styles.catTag}>
+                  <Text style={styles.catTagText}>{item.category}</Text>
                 </View>
                 <Text style={styles.brandText}>{item.brand}</Text>
               </View>
 
-              {/* ชื่อสินค้า */}
               <TouchableOpacity onPress={() => handleProductDetail(item)}>
-                <Text style={styles.productName} numberOfLines={2}>
-                  {item.name}
-                </Text>
+                <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
               </TouchableOpacity>
 
-              {/* คำอธิบายสั้น */}
-              <Text style={styles.productDescription} numberOfLines={2}>
-                {item.description}
-              </Text>
+              <Text style={styles.descText} numberOfLines={2}>{item.description}</Text>
 
-              {/* จุดเด่น (Feature Badges) */}
-              <View style={styles.featureRow}>
-                {item.features.slice(0, 2).map((feat, idx) => (
-                  <View key={idx} style={styles.featurePill}>
-                    <Ionicons name="checkmark-circle" size={12} color={COLORS.success} />
-                    <Text style={styles.featurePillText} numberOfLines={1}>
-                      {feat}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-
-              {/* เรตติ้งดาวและรีวิว */}
               <View style={styles.ratingRow}>
-                <View style={styles.stars}>
-                  <Ionicons name="star" size={14} color="#FBBF24" />
-                  <Text style={styles.ratingScore}>{item.rating.toFixed(1)}</Text>
-                </View>
+                <Ionicons name="star" size={13} color="#FBBF24" />
+                <Text style={styles.ratingScore}>{item.rating.toFixed(1)}</Text>
                 <Text style={styles.reviewCount}>({item.reviewsCount} รีวิว)</Text>
-                <Text style={styles.dotSeparator}>•</Text>
-                <Text style={styles.stockStatusText}>{item.stockStatus}</Text>
+                <Text style={styles.dot}>•</Text>
+                <Text style={styles.stockText}>{item.stockStatus}</Text>
               </View>
 
-              {/* แถวราคาและปุ่มสั่งซื้อ */}
-              <View style={styles.priceAndActionRow}>
-                <View style={styles.priceContainer}>
-                  <Text style={styles.currencySymbol}>฿</Text>
-                  <Text style={styles.priceText}>{item.price.toLocaleString()}</Text>
+              <View style={styles.priceActionRow}>
+                <View style={styles.priceWrap}>
+                  <Text style={styles.currency}>฿</Text>
+                  <Text style={styles.price}>{item.price.toLocaleString()}</Text>
                   {item.originalPrice && (
-                    <Text style={styles.originalPriceText}>
-                      ฿{item.originalPrice.toLocaleString()}
-                    </Text>
+                    <Text style={styles.oldPrice}>฿{item.originalPrice.toLocaleString()}</Text>
                   )}
                 </View>
-
-                <TouchableOpacity
-                  style={styles.addToCartBtn}
-                  activeOpacity={0.8}
-                  onPress={() => handleAddToCart(item)}
-                >
-                  <Ionicons name="bag-add" size={18} color="#FFFFFF" />
-                  <Text style={styles.addToCartBtnText}>สั่งซื้อ</Text>
+                <TouchableOpacity style={styles.addBtn} onPress={() => handleAddToCart(item)}>
+                  <Ionicons name="bag-add" size={16} color="#FFF" />
+                  <Text style={styles.addBtnText}>สั่งซื้อ</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -308,534 +197,94 @@ export default function HomeScreen() {
         )}
       />
 
-      {/* ================================================================== */}
-      {/* 3. เมนูนำทางด้านล่าง (BOTTOM NAVIGATION MENU) */}
-      {/* ================================================================== */}
+      {/* 3. BOTTOM NAVIGATION BAR */}
       <View style={styles.bottomNav}>
-        <TouchableOpacity
-          style={styles.navTab}
-          onPress={() => setActiveTab("home")}
-          activeOpacity={0.7}
-        >
-          <Ionicons
-            name={activeTab === "home" ? "home" : "home-outline"}
-            size={22}
-            color={activeTab === "home" ? COLORS.primary : COLORS.textSecondary}
-          />
-          <Text
-            style={[
-              styles.navLabel,
-              activeTab === "home" && styles.navLabelActive,
-            ]}
-          >
-            หน้าหลัก
-          </Text>
-          {activeTab === "home" && <View style={styles.activeTabIndicator} />}
+        <TouchableOpacity style={styles.navTab} onPress={() => setActiveTab("home")}>
+          <Ionicons name={activeTab === "home" ? "home" : "home-outline"} size={22} color={activeTab === "home" ? COLORS.primary : COLORS.textSecondary} />
+          <Text style={[styles.navLabel, activeTab === "home" && styles.navLabelActive]}>หน้าหลัก</Text>
+          {activeTab === "home" && <View style={styles.activeBar} />}
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.navTab}
-          onPress={() => {
-            setActiveTab("products");
-            setSelectedCategory("All");
-          }}
-          activeOpacity={0.7}
-        >
-          <Ionicons
-            name={activeTab === "products" ? "grid" : "grid-outline"}
-            size={22}
-            color={activeTab === "products" ? COLORS.primary : COLORS.textSecondary}
-          />
-          <Text
-            style={[
-              styles.navLabel,
-              activeTab === "products" && styles.navLabelActive,
-            ]}
-          >
-            สินค้าทั้งหมด
-          </Text>
-          {activeTab === "products" && <View style={styles.activeTabIndicator} />}
+        <TouchableOpacity style={styles.navTab} onPress={() => { setActiveTab("products"); setSelectedCategory("All"); }}>
+          <Ionicons name={activeTab === "products" ? "grid" : "grid-outline"} size={22} color={activeTab === "products" ? COLORS.primary : COLORS.textSecondary} />
+          <Text style={[styles.navLabel, activeTab === "products" && styles.navLabelActive]}>สินค้า</Text>
+          {activeTab === "products" && <View style={styles.activeBar} />}
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.navTab}
-          onPress={() => {
-            setActiveTab("cart");
-            Alert.alert("ตะกร้าสินค้า", `รายการสินค้าในตะกร้า: ${cartCount} ชิ้น`);
-          }}
-          activeOpacity={0.7}
-        >
+        <TouchableOpacity style={styles.navTab} onPress={() => { setActiveTab("cart"); Alert.alert("ตะกร้าสินค้า", `มีสินค้า ${cartCount} ชิ้น`); }}>
           <View>
-            <Ionicons
-              name={activeTab === "cart" ? "cart" : "cart-outline"}
-              size={22}
-              color={activeTab === "cart" ? COLORS.primary : COLORS.textSecondary}
-            />
+            <Ionicons name={activeTab === "cart" ? "cart" : "cart-outline"} size={22} color={activeTab === "cart" ? COLORS.primary : COLORS.textSecondary} />
             {cartCount > 0 && (
-              <View style={styles.navCartBadge}>
-                <Text style={styles.navCartBadgeText}>{cartCount}</Text>
-              </View>
+              <View style={styles.navCartBadge}><Text style={styles.navCartText}>{cartCount}</Text></View>
             )}
           </View>
-          <Text
-            style={[
-              styles.navLabel,
-              activeTab === "cart" && styles.navLabelActive,
-            ]}
-          >
-            ตะกร้า
-          </Text>
-          {activeTab === "cart" && <View style={styles.activeTabIndicator} />}
+          <Text style={[styles.navLabel, activeTab === "cart" && styles.navLabelActive]}>ตะกร้า</Text>
+          {activeTab === "cart" && <View style={styles.activeBar} />}
         </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.navTab}
-          onPress={() => {
-            setActiveTab("profile");
-            Alert.alert("บัญชีผู้ใช้", "เข้าสู่ระบบในชื่อ: Kanwit Store");
-          }}
-          activeOpacity={0.7}
-        >
-          <Ionicons
-            name={activeTab === "profile" ? "person" : "person-outline"}
-            size={22}
-            color={activeTab === "profile" ? COLORS.primary : COLORS.textSecondary}
-          />
-          <Text
-            style={[
-              styles.navLabel,
-              activeTab === "profile" && styles.navLabelActive,
-            ]}
-          >
-            โปรไฟล์
-          </Text>
-          {activeTab === "profile" && <View style={styles.activeTabIndicator} />}
+        <TouchableOpacity style={styles.navTab} onPress={() => { setActiveTab("profile"); Alert.alert("บัญชีผู้ใช้", "เข้าสู่ระบบในชื่อ: Kanwit Store"); }}>
+          <Ionicons name={activeTab === "profile" ? "person" : "person-outline"} size={22} color={activeTab === "profile" ? COLORS.primary : COLORS.textSecondary} />
+          <Text style={[styles.navLabel, activeTab === "profile" && styles.navLabelActive]}>โปรไฟล์</Text>
+          {activeTab === "profile" && <View style={styles.activeBar} />}
         </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 }
 
-// ============================================================================
-// STYLES
-// ============================================================================
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
-
-  /* --- Top Navigation Bar --- */
-  topNav: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: COLORS.card,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-    elevation: 3,
-  },
-  brandContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  logoBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: COLORS.primary,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  brandTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: COLORS.text,
-    letterSpacing: 0.5,
-  },
-  brandSubtitle: {
-    fontSize: 11,
-    color: COLORS.textSecondary,
-    fontWeight: "500",
-  },
-  topRightActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  iconButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: COLORS.background,
-    justifyContent: "center",
-    alignItems: "center",
-    position: "relative",
-  },
-  cartButton: {
-    backgroundColor: COLORS.primaryLight,
-  },
-  notificationDot: {
-    position: "absolute",
-    top: 8,
-    right: 8,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: COLORS.accent,
-  },
-  cartBadge: {
-    position: "absolute",
-    top: -2,
-    right: -2,
-    backgroundColor: COLORS.accent,
-    borderRadius: 10,
-    minWidth: 18,
-    height: 18,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 4,
-  },
-  cartBadgeText: {
-    color: "#FFFFFF",
-    fontSize: 10,
-    fontWeight: "700",
-  },
-
-  /* --- List Content --- */
-  listContent: {
-    padding: 16,
-    paddingBottom: 24,
-    maxWidth: 900,
-    width: "100%",
-    alignSelf: "center",
-  },
-
-  /* --- Hero Banner --- */
-  heroBanner: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    backgroundColor: "#1E1B4B",
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 20,
-  },
-  heroLeft: {
-    flex: 1,
-  },
-  hotTag: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "rgba(236, 72, 153, 0.9)",
-    alignSelf: "flex-start",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-    marginBottom: 8,
-  },
-  hotTagText: {
-    color: "#FFFFFF",
-    fontSize: 10,
-    fontWeight: "800",
-    letterSpacing: 0.5,
-  },
-  heroTitle: {
-    color: "#FFFFFF",
-    fontSize: 20,
-    fontWeight: "800",
-    marginBottom: 4,
-  },
-  heroSubtitle: {
-    color: "#C7D2FE",
-    fontSize: 12,
-    lineHeight: 16,
-  },
-  heroRight: {
-    paddingLeft: 12,
-  },
-
-  /* --- Category Section --- */
-  categorySection: {
-    marginBottom: 16,
-  },
-  sectionHeaderTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: COLORS.text,
-    marginBottom: 10,
-  },
-  categoryList: {
-    gap: 8,
-    paddingBottom: 4,
-  },
-  categoryChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: COLORS.card,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-  },
-  categoryChipActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  categoryChipText: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: COLORS.textSecondary,
-  },
-  categoryChipTextActive: {
-    color: "#FFFFFF",
-  },
-
-  /* --- Products Header --- */
-  productsHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  stockBadge: {
-    backgroundColor: "#DCFCE7",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  stockBadgeText: {
-    color: "#15803D",
-    fontSize: 11,
-    fontWeight: "700",
-  },
-
-  /* --- Product Card --- */
-  productCard: {
-    backgroundColor: COLORS.card,
-    borderRadius: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    overflow: "hidden",
-    elevation: 2,
-  },
-  imageWrapper: {
-    width: "100%",
-    height: 220,
-    backgroundColor: "#F1F5F9",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 16,
-    position: "relative",
-  },
-  productImage: {
-    width: "100%",
-    height: "100%",
-  },
-  discountBadge: {
-    position: "absolute",
-    top: 12,
-    right: 12,
-    backgroundColor: COLORS.danger,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  discountBadgeText: {
-    color: "#FFFFFF",
-    fontSize: 11,
-    fontWeight: "800",
-  },
-
-  productInfo: {
-    padding: 16,
-  },
-  metaRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  categoryTag: {
-    backgroundColor: COLORS.primaryLight,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  categoryTagText: {
-    color: COLORS.primaryDark,
-    fontSize: 11,
-    fontWeight: "700",
-  },
-  brandText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: COLORS.textSecondary,
-  },
-  productName: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: COLORS.text,
-    lineHeight: 22,
-    marginBottom: 6,
-  },
-  productDescription: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    lineHeight: 18,
-    marginBottom: 10,
-  },
-  featureRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    marginBottom: 10,
-  },
-  featurePill: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: "#F1F5F9",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  featurePillText: {
-    fontSize: 11,
-    color: COLORS.textSecondary,
-    fontWeight: "500",
-  },
-  ratingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginBottom: 14,
-  },
-  stars: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-  },
-  ratingScore: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: COLORS.text,
-  },
-  reviewCount: {
-    fontSize: 12,
-    color: COLORS.textSecondary,
-  },
-  dotSeparator: {
-    color: COLORS.textSecondary,
-    fontSize: 12,
-  },
-  stockStatusText: {
-    fontSize: 12,
-    color: COLORS.success,
-    fontWeight: "600",
-  },
-
-  priceAndActionRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-  },
-  priceContainer: {
-    flexDirection: "row",
-    alignItems: "baseline",
-    gap: 2,
-  },
-  currencySymbol: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: COLORS.primary,
-  },
-  priceText: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: COLORS.primary,
-  },
-  originalPriceText: {
-    fontSize: 13,
-    color: COLORS.textSecondary,
-    textDecorationLine: "line-through",
-    marginLeft: 6,
-  },
-  addToCartBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: COLORS.primary,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 10,
-  },
-  addToCartBtnText: {
-    color: "#FFFFFF",
-    fontSize: 14,
-    fontWeight: "700",
-  },
-
-  /* --- Bottom Navigation Bar --- */
-  bottomNav: {
-    flexDirection: "row",
-    backgroundColor: COLORS.card,
-    borderTopWidth: 1,
-    borderTopColor: COLORS.border,
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    elevation: 8,
-  },
-  navTab: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 4,
-    position: "relative",
-  },
-  navLabel: {
-    fontSize: 11,
-    marginTop: 3,
-    color: COLORS.textSecondary,
-    fontWeight: "500",
-  },
-  navLabelActive: {
-    color: COLORS.primary,
-    fontWeight: "700",
-  },
-  activeTabIndicator: {
-    position: "absolute",
-    bottom: -4,
-    width: 20,
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: COLORS.primary,
-  },
-  navCartBadge: {
-    position: "absolute",
-    top: -4,
-    right: -8,
-    backgroundColor: COLORS.accent,
-    borderRadius: 8,
-    minWidth: 16,
-    height: 16,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 3,
-  },
-  navCartBadgeText: {
-    color: "#FFFFFF",
-    fontSize: 9,
-    fontWeight: "700",
-  },
+  container: { flex: 1, backgroundColor: COLORS.background },
+  topNav: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: COLORS.card, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: COLORS.border, elevation: 3 },
+  brandContainer: { flexDirection: "row", alignItems: "center", gap: 8 },
+  logoBadge: { width: 32, height: 32, borderRadius: 8, backgroundColor: COLORS.primary, justifyContent: "center", alignItems: "center" },
+  brandTitle: { fontSize: 15, fontWeight: "800", color: COLORS.text, letterSpacing: 0.5 },
+  brandSub: { fontSize: 10, color: COLORS.textSecondary, fontWeight: "500" },
+  topRightActions: { flexDirection: "row", alignItems: "center", gap: 8 },
+  iconBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.background, justifyContent: "center", alignItems: "center", position: "relative" },
+  cartBtn: { backgroundColor: COLORS.primaryLight },
+  notifDot: { position: "absolute", top: 7, right: 7, width: 7, height: 7, borderRadius: 4, backgroundColor: COLORS.accent },
+  cartBadge: { position: "absolute", top: -2, right: -2, backgroundColor: COLORS.accent, borderRadius: 9, minWidth: 16, height: 16, justifyContent: "center", alignItems: "center", paddingHorizontal: 3 },
+  cartBadgeText: { color: "#FFF", fontSize: 9, fontWeight: "700" },
+  listContent: { padding: 16, maxWidth: 800, width: "100%", alignSelf: "center" },
+  categorySection: { marginBottom: 12 },
+  catList: { gap: 8, paddingBottom: 4 },
+  catChip: { flexDirection: "row", alignItems: "center", gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 18, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border },
+  catChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  catChipText: { fontSize: 12, fontWeight: "600", color: COLORS.textSecondary },
+  catChipTextActive: { color: "#FFF" },
+  sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
+  sectionTitle: { fontSize: 15, fontWeight: "700", color: COLORS.text },
+  stockBadge: { backgroundColor: "#DCFCE7", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  stockBadgeText: { color: "#15803D", fontSize: 11, fontWeight: "700" },
+  card: { backgroundColor: COLORS.card, borderRadius: 14, marginBottom: 14, borderWidth: 1, borderColor: COLORS.border, overflow: "hidden", elevation: 2 },
+  imgWrap: { width: "100%", height: 180, backgroundColor: "#F1F5F9", justifyContent: "center", alignItems: "center", padding: 12, position: "relative" },
+  productImg: { width: "100%", height: "100%" },
+  discountBadge: { position: "absolute", top: 10, right: 10, backgroundColor: COLORS.danger, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 5 },
+  discountText: { color: "#FFF", fontSize: 10, fontWeight: "800" },
+  cardBody: { padding: 14 },
+  metaRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 6 },
+  catTag: { backgroundColor: COLORS.primaryLight, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 5 },
+  catTagText: { color: COLORS.primaryDark, fontSize: 10, fontWeight: "700" },
+  brandText: { fontSize: 11, fontWeight: "600", color: COLORS.textSecondary },
+  productName: { fontSize: 15, fontWeight: "700", color: COLORS.text, lineHeight: 20, marginBottom: 4 },
+  descText: { fontSize: 12, color: COLORS.textSecondary, lineHeight: 16, marginBottom: 8 },
+  ratingRow: { flexDirection: "row", alignItems: "center", gap: 5, marginBottom: 10 },
+  ratingScore: { fontSize: 12, fontWeight: "700", color: COLORS.text },
+  reviewCount: { fontSize: 11, color: COLORS.textSecondary },
+  dot: { color: COLORS.textSecondary, fontSize: 10 },
+  stockText: { fontSize: 11, color: COLORS.success, fontWeight: "600" },
+  priceActionRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingTop: 10, borderTopWidth: 1, borderTopColor: COLORS.border },
+  priceWrap: { flexDirection: "row", alignItems: "baseline", gap: 2 },
+  currency: { fontSize: 14, fontWeight: "700", color: COLORS.primary },
+  price: { fontSize: 19, fontWeight: "800", color: COLORS.primary },
+  oldPrice: { fontSize: 12, color: COLORS.textSecondary, textDecorationLine: "line-through", marginLeft: 5 },
+  addBtn: { flexDirection: "row", alignItems: "center", gap: 5, backgroundColor: COLORS.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
+  addBtnText: { color: "#FFF", fontSize: 13, fontWeight: "700" },
+  bottomNav: { flexDirection: "row", backgroundColor: COLORS.card, borderTopWidth: 1, borderTopColor: COLORS.border, paddingVertical: 8, elevation: 8 },
+  navTab: { flex: 1, alignItems: "center", justifyContent: "center", paddingVertical: 3, position: "relative" },
+  navLabel: { fontSize: 10, marginTop: 3, color: COLORS.textSecondary, fontWeight: "500" },
+  navLabelActive: { color: COLORS.primary, fontWeight: "700" },
+  activeBar: { position: "absolute", bottom: -4, width: 18, height: 3, borderRadius: 2, backgroundColor: COLORS.primary },
+  navCartBadge: { position: "absolute", top: -3, right: -6, backgroundColor: COLORS.accent, borderRadius: 7, minWidth: 14, height: 14, justifyContent: "center", alignItems: "center", paddingHorizontal: 2 },
+  navCartText: { color: "#FFF", fontSize: 8, fontWeight: "700" },
 });
