@@ -9,7 +9,7 @@
  * ============================================================================
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FlatList,
   Image,
@@ -23,7 +23,8 @@ import {
   Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons, MaterialCommunityIcons, Feather } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import * as SplashScreen from "expo-splash-screen";
 import { PRODUCTS, ProductItem } from "@/constants/products";
 
 // --- ชุดสีธีม Gaming Modern ---
@@ -31,8 +32,8 @@ const COLORS = {
   primary: "#6366F1",        // Indigo
   primaryDark: "#4F46E5",
   primaryLight: "#EEF2FF",
-  accent: "#EC4899",         // Pink/Rose Accent
-  background: "#F8FAFC",     // Light gray background
+  accent: "#EC4899",         // Pink Accent
+  background: "#F8FAFC",     // Slate 50
   card: "#FFFFFF",
   text: "#0F172A",           // Slate 900
   textSecondary: "#64748B",  // Slate 500
@@ -47,17 +48,22 @@ export default function HomeScreen() {
   const [cartCount, setCartCount] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<string>("home");
 
-  // กรองสินค้าตามหมวดหมู่ (ถ้าเลือก All จะแสดงทั้งหมด)
+  useEffect(() => {
+    // ปิด Splash Screen เมื่อเข้าสู่หน้าแรก
+    SplashScreen.hideAsync().catch(() => {});
+  }, []);
+
+  // กรองสินค้าตามหมวดหมู่
   const filteredProducts =
     selectedCategory === "All"
       ? PRODUCTS
       : PRODUCTS.filter((item) => item.category === selectedCategory);
 
   const categories = [
-    { id: "All", label: "ทั้งหมด (All)", icon: "apps-outline" },
-    { id: "Gaming Mouse", label: "เมาส์ (Mouse)", icon: "mouse" },
-    { id: "Gaming Headset", label: "หูฟัง (Headset)", icon: "headset" },
-    { id: "Gaming Keyboard", label: "คีย์บอร์ด (Keyboard)", icon: "keyboard-outline" },
+    { id: "All", label: "ทั้งหมด (All)", iconType: "ion", icon: "grid-outline" },
+    { id: "Gaming Mouse", label: "เมาส์ (Mouse)", iconType: "mc", icon: "mouse" },
+    { id: "Gaming Headset", label: "หูฟัง (Headset)", iconType: "ion", icon: "headset-outline" },
+    { id: "Gaming Keyboard", label: "คีย์บอร์ด (Keyboard)", iconType: "mc", icon: "keyboard-outline" },
   ];
 
   const handleAddToCart = (product: ProductItem) => {
@@ -175,11 +181,19 @@ export default function HomeScreen() {
                       onPress={() => setSelectedCategory(cat.id)}
                       activeOpacity={0.7}
                     >
-                      <Ionicons
-                        name={cat.icon as any}
-                        size={16}
-                        color={isSelected ? "#FFFFFF" : COLORS.textSecondary}
-                      />
+                      {cat.iconType === "ion" ? (
+                        <Ionicons
+                          name={cat.icon as any}
+                          size={16}
+                          color={isSelected ? "#FFFFFF" : COLORS.textSecondary}
+                        />
+                      ) : (
+                        <MaterialCommunityIcons
+                          name={cat.icon as any}
+                          size={16}
+                          color={isSelected ? "#FFFFFF" : COLORS.textSecondary}
+                        />
+                      )}
                       <Text
                         style={[
                           styles.categoryChipText,
@@ -421,20 +435,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 3,
-      },
-      web: {
-        boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-      },
-    }),
+    elevation: 3,
   },
   brandContainer: {
     flexDirection: "row",
@@ -508,6 +509,9 @@ const styles = StyleSheet.create({
   listContent: {
     padding: 16,
     paddingBottom: 24,
+    maxWidth: 900,
+    width: "100%",
+    alignSelf: "center",
   },
 
   /* --- Hero Banner --- */
@@ -515,7 +519,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#1E1B4B", // Deep Indigo
+    backgroundColor: "#1E1B4B",
     borderRadius: 16,
     padding: 18,
     marginBottom: 20,
@@ -620,20 +624,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: COLORS.border,
     overflow: "hidden",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 6,
-      },
-      android: {
-        elevation: 2,
-      },
-      web: {
-        boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
-      },
-    }),
+    elevation: 2,
   },
   imageWrapper: {
     width: "100%",
@@ -803,20 +794,7 @@ const styles = StyleSheet.create({
     borderTopColor: COLORS.border,
     paddingVertical: 8,
     paddingHorizontal: 8,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 8,
-      },
-      web: {
-        boxShadow: "0 -2px 8px rgba(0,0,0,0.04)",
-      },
-    }),
+    elevation: 8,
   },
   navTab: {
     flex: 1,
