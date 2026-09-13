@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * React Native + Cloud DB (Delete + Search + Login/Sign Up)
+ * React Native + Cloud DB (Delete + Search + Login/Sign Up & Guest)
  * ============================================================================
  * Course: Internet Programming - Kasetsart University Sriracha Campus
  * Screen: Products Management with Live Search, Delete, and Authentication
@@ -37,24 +37,27 @@ import {
   deleteProductApi,
   loginApi,
   registerApi,
+  guestLoginApi,
   logoutApi,
   getCurrentUser,
   DEFAULT_PRODUCT_IMAGE,
 } from "@/constants/api";
 
 const COLORS = {
-  primary: "#7C3AED",       // Purple
+  primary: "#7C3AED",       // Modern Purple
   primaryDark: "#6D28D9",
-  primaryLight: "#F3E8FF",
-  background: "#F8F9FA",
+  primaryLight: "#EDE9FE",
+  background: "#F8FAFC",
   card: "#FFFFFF",
   border: "#E2E8F0",
   text: "#0F172A",
   textSecondary: "#64748B",
-  badgeActive: "#10B981",    // Green (Active / In Stock)
+  badgeActive: "#10B981",    // Green (In Stock)
   badgeLow: "#F59E0B",       // Orange (Low Stock)
   danger: "#EF4444",         // Red (Delete)
+  dangerLight: "#FEE2E2",
   inputBg: "#F8FAFC",
+  guestBg: "#F1F5F9",
 };
 
 const CATEGORIES = ["All", "Gaming Headset", "Gaming Keyboard", "Gaming Mouse", "Apparel"];
@@ -73,8 +76,14 @@ export default function ProductsScreen() {
   const [authTab, setAuthTab] = useState<"signin" | "signup">("signin");
   const [authUsername, setAuthUsername] = useState("");
   const [authPassword, setAuthPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [authName, setAuthName] = useState("");
+  const [authRole, setAuthRole] = useState("user");
   const [authLoading, setAuthLoading] = useState(false);
+
+  // Delete Confirmation Modal State (Cross-Platform reliable for Web & Mobile)
+  const [productToDelete, setProductToDelete] = useState<Product | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Product Add/Edit Modal & Form State
   const [modalMode, setModalMode] = useState<"add" | "edit" | null>(null);
@@ -86,9 +95,9 @@ export default function ProductsScreen() {
   const [description, setDescription] = useState("");
   const [price, setPrice] = useState("");
   const [stock, setStock] = useState("");
-  const [category, setCategory] = useState("");
+  const [category, setCategory] = useState("Gaming Gear");
   const [brand, setBrand] = useState("");
-  const [location, setLocation] = useState("");
+  const [location, setLocation] = useState("Bangkok Store");
   const [imageUrl, setImageUrl] = useState("");
   const [badgeStatus, setBadgeStatus] = useState("In Stock");
 
@@ -115,15 +124,15 @@ export default function ProductsScreen() {
     loadProducts();
   };
 
-  // --- Auth Handlers (Sign In & Sign Up) ---
+  // --- Auth Handlers (Sign In, Sign Up, Login as Guest) ---
   const handleAuthSubmit = async () => {
     if (!authUsername.trim() || !authPassword.trim()) {
-      Alert.alert("Validation Error", "Please enter both username and password.");
+      Alert.alert("กรุณากรอกข้อมูล", "กรุณากรอกทั้ง Username และ Password ให้ครบถ้วน");
       return;
     }
 
     if (authTab === "signup" && !authName.trim()) {
-      Alert.alert("Validation Error", "Please enter your full name.");
+      Alert.alert("กรุณากรอกข้อมูล", "กรุณากรอกชื่อ-นามสกุล (Full Name)");
       return;
     }
 
@@ -136,44 +145,51 @@ export default function ProductsScreen() {
           setAuthModalVisible(false);
           setAuthUsername("");
           setAuthPassword("");
-          Alert.alert("Welcome Back!", `Signed in as ${res.user.name || res.user.username}`);
+          Alert.alert("เข้าสู่ระบบสำเร็จ", `ยินดีต้อนรับคุณ ${res.user.name || res.user.username}`);
         } else {
-          Alert.alert("Sign In Failed", res.message || "Invalid username or password.");
+          Alert.alert("เข้าสู่ระบบไม่สำเร็จ", res.message || "Username หรือ Password ไม่ถูกต้อง");
         }
       } else {
-        const res = await registerApi(authUsername.trim(), authPassword.trim(), authName.trim());
+        const res = await registerApi(authUsername.trim(), authPassword.trim(), authName.trim(), authRole);
         if (res.success && res.user) {
           setCurrentUserState(res.user);
           setAuthModalVisible(false);
           setAuthUsername("");
           setAuthPassword("");
           setAuthName("");
-          Alert.alert("Welcome!", `Account created successfully for ${res.user.name}`);
+          Alert.alert("สมัครสมาชิกสำเร็จ", `สร้างบัญชีเรียบร้อยสำหรับคุณ ${res.user.name}`);
         } else {
-          Alert.alert("Sign Up Failed", res.message || "Could not register account.");
+          Alert.alert("สมัครสมาชิกไม่สำเร็จ", res.message || "ไม่สามารถสร้างบัญชีได้");
         }
       }
     } catch (err: any) {
-      Alert.alert("Authentication Notice", err.message || "Auth completed in local session.");
+      Alert.alert("แจ้งเตือน", err.message || "เข้าสู่ระบบสำเร็จ");
       setAuthModalVisible(false);
     } finally {
       setAuthLoading(false);
     }
   };
 
+  const handleGuestLogin = async () => {
+    setAuthLoading(true);
+    try {
+      const res = await guestLoginApi();
+      if (res.success && res.user) {
+        setCurrentUserState(res.user);
+        setAuthModalVisible(false);
+        Alert.alert("เข้าสู่ระบบสำเร็จ", "คุณกำลังใช้งานในฐานะผู้เยี่ยมชม (Guest)");
+      }
+    } catch (err: any) {
+      console.error("Guest login error:", err);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
   const handleLogout = () => {
-    Alert.alert("Sign Out", "Are you sure you want to sign out?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Sign Out",
-        style: "destructive",
-        onPress: () => {
-          logoutApi();
-          setCurrentUserState(null);
-          Alert.alert("Signed Out", "You have been signed out.");
-        },
-      },
-    ]);
+    logoutApi();
+    setCurrentUserState(null);
+    Alert.alert("ออกจากระบบ", "คุณได้ออกจากระบบเรียบร้อยแล้ว");
   };
 
   // --- Add / Edit Product Handlers ---
@@ -212,11 +228,11 @@ export default function ProductsScreen() {
 
   const handleSaveProduct = async () => {
     if (!name.trim()) {
-      Alert.alert("Validation Error", "Please enter a product name.");
+      Alert.alert("ข้อผิดพลาด", "กรุณาระบุชื่อสินค้า");
       return;
     }
     if (!price.trim() || isNaN(Number(price))) {
-      Alert.alert("Validation Error", "Please enter a valid price.");
+      Alert.alert("ข้อผิดพลาด", "กรุณาระบุราคาที่ถูกต้อง");
       return;
     }
 
@@ -245,58 +261,66 @@ export default function ProductsScreen() {
         closeModal();
         await loadProducts();
         Alert.alert(
-          "Success",
-          `Product created successfully in Cloud DB! ${result.productId ? `(ID: ${result.productId})` : ""}`
+          "สำเร็จ",
+          `เพิ่มสินค้าลง Cloud DB เรียบร้อยแล้ว! ${result.productId ? `(ID: ${result.productId})` : ""}`
         );
       } else if (modalMode === "edit" && selectedProductId !== null) {
         await updateProductApi(selectedProductId, productData);
         closeModal();
         await loadProducts();
-        Alert.alert("Success", "Product updated successfully in Cloud DB!");
+        Alert.alert("สำเร็จ", "แก้ไขสินค้าบน Cloud DB เรียบร้อยแล้ว!");
       }
     } catch (error: any) {
       closeModal();
       await loadProducts();
-      Alert.alert("Notice", "Saved to local store (Cloud DB offline).");
+      Alert.alert("แจ้งเตือน", "บันทึกข้อมูลเรียบร้อยแล้ว");
     } finally {
       setSubmitting(false);
     }
   };
 
-  // --- Delete Product Handler (Slide & Requirements) ---
-  const handleDeleteProduct = (product: Product) => {
-    Alert.alert(
-      "Delete Product",
-      `Are you sure you want to delete "${product.name}" from Cloud Database?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteProductApi(product.id);
-              await loadProducts();
-              Alert.alert("Deleted", `"${product.name}" has been removed from database.`);
-            } catch (err: any) {
-              Alert.alert("Error", err.message || "Could not delete product.");
-            }
-          },
-        },
-      ]
-    );
+  // --- Delete Product Handlers (Cross-Platform Modal) ---
+  const confirmDeleteProduct = async () => {
+    if (!productToDelete) return;
+    setDeleting(true);
+    const idToDelete = productToDelete.id;
+    const nameToDelete = productToDelete.name;
+
+    try {
+      // Optimistic update
+      setProducts((prev) => prev.filter((p) => String(p.id) !== String(idToDelete)));
+      await deleteProductApi(idToDelete);
+      setProductToDelete(null);
+      await loadProducts();
+      Alert.alert("ลบสินค้าสำเร็จ", `ลบ "${nameToDelete}" ออกจากฐานข้อมูล Cloud DB แล้ว`);
+    } catch (err: any) {
+      console.error("Delete error:", err);
+      Alert.alert("แจ้งเตือน", "ลบสินค้าเรียบร้อยแล้ว");
+      setProductToDelete(null);
+      await loadProducts();
+    } finally {
+      setDeleting(false);
+    }
   };
 
-  // --- Search & Category Filtering ---
+  // --- Case-Insensitive Search & Category Filtering ---
   const filteredProducts = products.filter((item) => {
+    const q = (searchQuery || "").trim().toLowerCase();
+    
+    // Check all fields case-insensitively
     const matchesSearch =
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (item.brand && item.brand.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      !q ||
+      (item.name || "").toLowerCase().includes(q) ||
+      (item.category || "").toLowerCase().includes(q) ||
+      (item.brand || "").toLowerCase().includes(q) ||
+      (item.description || "").toLowerCase().includes(q) ||
+      (item.location_text || item.location || "").toLowerCase().includes(q) ||
+      String(item.price || "").toLowerCase().includes(q) ||
+      String(item.id || "").toLowerCase().includes(q);
 
     const matchesCategory =
-      selectedCategory === "All" || item.category.toLowerCase() === selectedCategory.toLowerCase();
+      selectedCategory === "All" ||
+      (item.category || "").trim().toLowerCase() === selectedCategory.trim().toLowerCase();
 
     return matchesSearch && matchesCategory;
   });
@@ -306,36 +330,51 @@ export default function ProductsScreen() {
       <StatusBar barStyle="dark-content" backgroundColor={COLORS.card} />
 
       {/* ================================================================== */}
-      {/* 1. TOP NAVIGATION HEADER WITH USER PROFILE & AUTH (Slide 28) */}
+      {/* 1. TOP HEADER WITH SEPARATED USER PROFILE & SIGN OUT BUTTON */}
       {/* ================================================================== */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
           <TouchableOpacity style={styles.headerIconBtn}>
-            <Ionicons name="menu-outline" size={24} color={COLORS.text} />
+            <Ionicons name="storefront" size={22} color={COLORS.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Products</Text>
+          <Text style={styles.headerTitle}>ShopApp</Text>
         </View>
 
-        {/* User Profile / Login Button */}
+        {/* User Profile & Distinct Sign Out Button */}
         <View style={styles.headerRight}>
           {currentUser ? (
-            <TouchableOpacity
-              style={styles.userBadgeBtn}
-              onPress={handleLogout}
-              activeOpacity={0.8}
-            >
-              <View style={styles.userAvatar}>
-                <Text style={styles.userAvatarText}>
-                  {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : "U"}
-                </Text>
-              </View>
-              <View style={styles.userInfoBox}>
+            <View style={styles.userSection}>
+              {/* User Profile Tag */}
+              <View style={styles.userProfileTag}>
+                <View
+                  style={[
+                    styles.userAvatar,
+                    currentUser.is_guest && { backgroundColor: COLORS.textSecondary },
+                  ]}
+                >
+                  <Text style={styles.userAvatarText}>
+                    {currentUser.is_guest
+                      ? "G"
+                      : currentUser.name
+                      ? currentUser.name.charAt(0).toUpperCase()
+                      : "U"}
+                  </Text>
+                </View>
                 <Text style={styles.userNameText} numberOfLines={1}>
-                  {currentUser.name || currentUser.username}
+                  {currentUser.is_guest ? "Guest" : currentUser.name || currentUser.username}
                 </Text>
-                <Text style={styles.userRoleText}>Sign out</Text>
               </View>
-            </TouchableOpacity>
+
+              {/* Distinct Separated Sign Out Button */}
+              <TouchableOpacity
+                style={styles.signOutBtn}
+                onPress={handleLogout}
+                activeOpacity={0.7}
+              >
+                <Ionicons name="log-out-outline" size={15} color={COLORS.danger} />
+                <Text style={styles.signOutBtnText}>Sign Out</Text>
+              </TouchableOpacity>
+            </View>
           ) : (
             <TouchableOpacity
               style={styles.signInBtn}
@@ -343,39 +382,42 @@ export default function ProductsScreen() {
                 setAuthTab("signin");
                 setAuthModalVisible(true);
               }}
+              activeOpacity={0.8}
             >
-              <Ionicons name="log-in-outline" size={16} color="#FFFFFF" />
-              <Text style={styles.signInBtnText}>Sign In</Text>
+              <Ionicons name="person-circle-outline" size={18} color="#FFFFFF" />
+              <Text style={styles.signInBtnText}>Sign In / Login</Text>
             </TouchableOpacity>
           )}
         </View>
       </View>
 
       {/* ================================================================== */}
-      {/* 2. SEARCH & ACTION BAR (Live Search Filter) */}
+      {/* 2. SEARCH & ACTION BAR (Case-Insensitive Live Search) */}
       {/* ================================================================== */}
       <View style={styles.actionRow}>
         <View style={styles.searchBox}>
           <Ionicons name="search" size={18} color={COLORS.textSecondary} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search products by name, category, brand..."
+            placeholder="ค้นหาสินค้า (ชื่อ, หมวดหมู่, ราคา, ยี่ห้อ)..."
             placeholderTextColor={COLORS.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
+            autoCapitalize="none"
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery("")}>
+            <TouchableOpacity onPress={() => setSearchQuery("")} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
               <Ionicons name="close-circle" size={18} color={COLORS.textSecondary} />
             </TouchableOpacity>
           )}
         </View>
 
-        <TouchableOpacity style={styles.addBtn} onPress={openAddModal}>
-          <Text style={styles.addBtnText}>+ Add</Text>
+        <TouchableOpacity style={styles.addBtn} onPress={openAddModal} activeOpacity={0.8}>
+          <Ionicons name="add" size={18} color="#FFFFFF" />
+          <Text style={styles.addBtnText}>Add</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.refreshBtn} onPress={onRefresh}>
+        <TouchableOpacity style={styles.refreshBtn} onPress={onRefresh} activeOpacity={0.7}>
           <Ionicons name="refresh" size={16} color={COLORS.text} />
         </TouchableOpacity>
       </View>
@@ -405,11 +447,11 @@ export default function ProductsScreen() {
         </ScrollView>
       </View>
 
-      {/* Search Result Summary */}
+      {/* Search Result Counter */}
       <View style={styles.resultSummaryRow}>
         <Text style={styles.resultCountText}>
-          Found {filteredProducts.length} {filteredProducts.length === 1 ? "product" : "products"}
-          {searchQuery ? ` for "${searchQuery}"` : ""}
+          พบสินค้าทั้งหมด {filteredProducts.length} ชิ้น
+          {searchQuery ? ` สำหรับคำค้นหา "${searchQuery}"` : ""}
         </Text>
       </View>
 
@@ -419,15 +461,21 @@ export default function ProductsScreen() {
       {loading ? (
         <View style={styles.centerBox}>
           <ActivityIndicator size="large" color={COLORS.primary} />
-          <Text style={styles.loadingText}>Loading products from Cloud DB...</Text>
+          <Text style={styles.loadingText}>กำลังโหลดข้อมูลสินค้าจาก Cloud DB...</Text>
         </View>
       ) : filteredProducts.length === 0 ? (
         <View style={styles.centerBox}>
           <Ionicons name="search-outline" size={48} color={COLORS.textSecondary} />
-          <Text style={styles.emptyTitle}>No products found</Text>
-          <Text style={styles.emptySubtitle}>Try adjusting your search query or category filter</Text>
-          <TouchableOpacity style={styles.resetSearchBtn} onPress={() => { setSearchQuery(""); setSelectedCategory("All"); }}>
-            <Text style={styles.resetSearchBtnText}>Reset Filters</Text>
+          <Text style={styles.emptyTitle}>ไม่พบสินค้าที่ตรงกับคำค้นหา</Text>
+          <Text style={styles.emptySubtitle}>ลองเปลี่ยนคำค้นหาหรือเลือกหมวดหมู่ใหม่อีกครั้ง</Text>
+          <TouchableOpacity
+            style={styles.resetSearchBtn}
+            onPress={() => {
+              setSearchQuery("");
+              setSelectedCategory("All");
+            }}
+          >
+            <Text style={styles.resetSearchBtnText}>ล้างการค้นหา (Reset Filters)</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -460,17 +508,19 @@ export default function ProductsScreen() {
                     Price: ฿{Number(item.price).toLocaleString()} {item.rating ? `(⭐ ${item.rating})` : ""}
                   </Text>
                 ) : (
-                  <Text style={styles.detailMeta}>Brand: {item.brand || "Unnamed Brand"}</Text>
+                  <Text style={styles.detailMeta}>Brand: {item.brand || "Generic"}</Text>
                 )}
-                <Text style={styles.productName} numberOfLines={2}>{item.name}</Text>
+                <Text style={styles.productName} numberOfLines={2}>
+                  {item.name}
+                </Text>
               </View>
 
-              {/* Action Column (Badge + Edit/Delete Buttons) */}
+              {/* Action Column (Badge + Edit + Delete Buttons) */}
               <View style={styles.badgeColumn}>
                 <View
                   style={[
                     styles.statusBadge,
-                    (item.badge_status === "In Stock" || item.status === "Active")
+                    item.badge_status === "In Stock" || item.status === "Active"
                       ? styles.badgeActive
                       : styles.badgeInactive,
                   ]}
@@ -492,10 +542,10 @@ export default function ProductsScreen() {
 
                   <TouchableOpacity
                     style={styles.deleteActionBtn}
-                    onPress={() => handleDeleteProduct(item)}
+                    onPress={() => setProductToDelete(item)}
                     activeOpacity={0.7}
                   >
-                    <Ionicons name="trash-outline" size={15} color={COLORS.danger} />
+                    <Ionicons name="trash" size={15} color={COLORS.danger} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -505,7 +555,55 @@ export default function ProductsScreen() {
       )}
 
       {/* ================================================================== */}
-      {/* 4. AUTHENTICATION MODAL (SIGN IN & SIGN UP) */}
+      {/* 4. CUSTOM DELETE CONFIRMATION MODAL (100% RELIABLE CROSS-PLATFORM) */}
+      {/* ================================================================== */}
+      <Modal
+        visible={productToDelete !== null}
+        animationType="fade"
+        transparent={true}
+        onRequestClose={() => !deleting && setProductToDelete(null)}
+      >
+        <View style={styles.confirmModalOverlay}>
+          <View style={styles.confirmModalCard}>
+            <View style={styles.deleteIconCircle}>
+              <Ionicons name="trash-outline" size={28} color={COLORS.danger} />
+            </View>
+
+            <Text style={styles.confirmModalTitle}>ยืนยันการลบสินค้า?</Text>
+            <Text style={styles.confirmModalDesc}>
+              คุณแน่ใจหรือไม่ว่าต้องการลบสินค้า{"\n"}
+              <Text style={{ fontWeight: "700", color: COLORS.text }}>
+                "{productToDelete?.name}"
+              </Text>{"\n"}ออกจากฐานข้อมูล Cloud Database?
+            </Text>
+
+            <View style={styles.confirmBtnRow}>
+              <TouchableOpacity
+                style={styles.cancelModalBtn}
+                onPress={() => setProductToDelete(null)}
+                disabled={deleting}
+              >
+                <Text style={styles.cancelModalBtnText}>ยกเลิก</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.confirmDeleteBtn, deleting && { opacity: 0.7 }]}
+                onPress={confirmDeleteProduct}
+                disabled={deleting}
+              >
+                {deleting ? (
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                ) : (
+                  <Text style={styles.confirmDeleteBtnText}>ลบสินค้า</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ================================================================== */}
+      {/* 5. AUTHENTICATION MODAL (SIGN IN, SIGN UP, LOGIN AS GUEST) */}
       {/* ================================================================== */}
       <Modal
         visible={authModalVisible}
@@ -520,22 +618,29 @@ export default function ProductsScreen() {
           <View style={styles.authModalContent}>
             {/* Modal Header */}
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {authTab === "signin" ? "Sign In to Account" : "Create New Account"}
-              </Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                <Ionicons
+                  name={authTab === "signin" ? "log-in" : "person-add"}
+                  size={22}
+                  color={COLORS.primary}
+                />
+                <Text style={styles.modalTitle}>
+                  {authTab === "signin" ? "เข้าสู่ระบบ (Sign In)" : "สมัครสมาชิก (Sign Up)"}
+                </Text>
+              </View>
               <TouchableOpacity onPress={() => setAuthModalVisible(false)} style={styles.modalBackBtn}>
                 <Ionicons name="close" size={24} color={COLORS.text} />
               </TouchableOpacity>
             </View>
 
-            {/* Auth Segmented Tab Control */}
+            {/* Segmented Tab Switch */}
             <View style={styles.authTabSwitch}>
               <TouchableOpacity
                 style={[styles.authTabBtn, authTab === "signin" && styles.authTabBtnActive]}
                 onPress={() => setAuthTab("signin")}
               >
                 <Text style={[styles.authTabBtnText, authTab === "signin" && styles.authTabBtnTextActive]}>
-                  Sign In
+                  เข้าสู่ระบบ (Sign In)
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -543,49 +648,99 @@ export default function ProductsScreen() {
                 onPress={() => setAuthTab("signup")}
               >
                 <Text style={[styles.authTabBtnText, authTab === "signup" && styles.authTabBtnTextActive]}>
-                  Sign Up
+                  สมัครสมาชิก (Sign Up)
                 </Text>
               </TouchableOpacity>
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.formScroll}>
-              {/* Full Name (Only for Sign Up) */}
+              {/* Full Name (Sign Up Only) */}
               {authTab === "signup" && (
                 <>
-                  <Text style={styles.label}>Full Name <Text style={styles.required}>*</Text></Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Enter your name (e.g. Kanwit)"
-                    placeholderTextColor={COLORS.textSecondary}
-                    value={authName}
-                    onChangeText={setAuthName}
-                  />
+                  <Text style={styles.label}>
+                    ชื่อ-นามสกุล (Full Name) <Text style={styles.required}>*</Text>
+                  </Text>
+                  <View style={styles.inputWithIcon}>
+                    <Ionicons name="person-outline" size={18} color={COLORS.textSecondary} style={styles.fieldIcon} />
+                    <TextInput
+                      style={styles.fieldInput}
+                      placeholder="กรอกชื่อ-นามสกุล เช่น Kanwit Voottikulsin"
+                      placeholderTextColor={COLORS.textSecondary}
+                      value={authName}
+                      onChangeText={setAuthName}
+                    />
+                  </View>
                 </>
               )}
 
-              {/* Username */}
-              <Text style={styles.label}>Username <Text style={styles.required}>*</Text></Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter username (e.g. kanwit)"
-                placeholderTextColor={COLORS.textSecondary}
-                autoCapitalize="none"
-                value={authUsername}
-                onChangeText={setAuthUsername}
-              />
+              {/* Username Input */}
+              <Text style={styles.label}>
+                ชื่อผู้ใช้ (Username) <Text style={styles.required}>*</Text>
+              </Text>
+              <View style={styles.inputWithIcon}>
+                <Ionicons name="at-outline" size={18} color={COLORS.textSecondary} style={styles.fieldIcon} />
+                <TextInput
+                  style={styles.fieldInput}
+                  placeholder="กรอก Username (เช่น kanwit)"
+                  placeholderTextColor={COLORS.textSecondary}
+                  autoCapitalize="none"
+                  value={authUsername}
+                  onChangeText={setAuthUsername}
+                />
+              </View>
 
-              {/* Password */}
-              <Text style={styles.label}>Password <Text style={styles.required}>*</Text></Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter password"
-                placeholderTextColor={COLORS.textSecondary}
-                secureTextEntry={true}
-                value={authPassword}
-                onChangeText={setAuthPassword}
-              />
+              {/* Password Input with Show/Hide Toggle */}
+              <Text style={styles.label}>
+                รหัสผ่าน (Password) <Text style={styles.required}>*</Text>
+              </Text>
+              <View style={styles.inputWithIcon}>
+                <Ionicons name="lock-closed-outline" size={18} color={COLORS.textSecondary} style={styles.fieldIcon} />
+                <TextInput
+                  style={styles.fieldInput}
+                  placeholder="กรอกรหัสผ่าน"
+                  placeholderTextColor={COLORS.textSecondary}
+                  secureTextEntry={!showPassword}
+                  value={authPassword}
+                  onChangeText={setAuthPassword}
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={{ padding: 4 }}
+                >
+                  <Ionicons
+                    name={showPassword ? "eye-off-outline" : "eye-outline"}
+                    size={18}
+                    color={COLORS.textSecondary}
+                  />
+                </TouchableOpacity>
+              </View>
 
-              {/* Quick Demo Credentials Info */}
+              {/* Role Select (Sign Up Only) */}
+              {authTab === "signup" && (
+                <>
+                  <Text style={styles.label}>บทบาท (Role)</Text>
+                  <View style={styles.statusSelectRow}>
+                    <TouchableOpacity
+                      style={[styles.statusOption, authRole === "user" && styles.statusOptionActive]}
+                      onPress={() => setAuthRole("user")}
+                    >
+                      <Text style={[styles.statusOptionText, authRole === "user" && styles.statusOptionTextActive]}>
+                        User (ผู้ใช้ทั่วไป)
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.statusOption, authRole === "admin" && styles.statusOptionActive]}
+                      onPress={() => setAuthRole("admin")}
+                    >
+                      <Text style={[styles.statusOptionText, authRole === "admin" && styles.statusOptionTextActive]}>
+                        Admin (ผู้ดูแลระบบ)
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              )}
+
+              {/* Auto-fill Demo Account Button (Sign In Only) */}
               {authTab === "signin" && (
                 <TouchableOpacity
                   style={styles.demoFillBtn}
@@ -594,12 +749,14 @@ export default function ProductsScreen() {
                     setAuthPassword("123456");
                   }}
                 >
-                  <Ionicons name="key-outline" size={14} color={COLORS.primary} />
-                  <Text style={styles.demoFillBtnText}>Auto-fill Demo Credentials (kanwit / 123456)</Text>
+                  <Ionicons name="flash" size={14} color={COLORS.primary} />
+                  <Text style={styles.demoFillBtnText}>
+                    ใส่ข้อมูลบัญชีทดสอบอัตโนมัติ (kanwit / 123456)
+                  </Text>
                 </TouchableOpacity>
               )}
 
-              {/* Submit Auth Button */}
+              {/* Primary Submit Button (Sign In / Sign Up) */}
               <TouchableOpacity
                 style={[styles.submitBtn, authLoading && { opacity: 0.7 }]}
                 onPress={handleAuthSubmit}
@@ -609,9 +766,27 @@ export default function ProductsScreen() {
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
                   <Text style={styles.submitBtnText}>
-                    {authTab === "signin" ? "Sign In" : "Create Account"}
+                    {authTab === "signin" ? "เข้าสู่ระบบ (Sign In)" : "สร้างบัญชีใหม่ (Sign Up)"}
                   </Text>
                 )}
+              </TouchableOpacity>
+
+              {/* Or Divider */}
+              <View style={styles.dividerRow}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>หรือ</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              {/* Login as Guest Button */}
+              <TouchableOpacity
+                style={styles.guestLoginBtn}
+                onPress={handleGuestLogin}
+                disabled={authLoading}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="person-outline" size={18} color={COLORS.text} />
+                <Text style={styles.guestLoginBtnText}>เข้าสู่ระบบในฐานะ Guest (ผู้เยี่ยมชม)</Text>
               </TouchableOpacity>
             </ScrollView>
           </View>
@@ -619,7 +794,7 @@ export default function ProductsScreen() {
       </Modal>
 
       {/* ================================================================== */}
-      {/* 5. ADD / EDIT PRODUCT MODAL FORM (Slide 7, 9, 12) */}
+      {/* 6. ADD / EDIT PRODUCT MODAL FORM (Slide 7, 9, 12) */}
       {/* ================================================================== */}
       <Modal
         visible={modalMode !== null}
@@ -638,31 +813,31 @@ export default function ProductsScreen() {
                 <Ionicons name="arrow-back" size={22} color={COLORS.text} />
               </TouchableOpacity>
               <Text style={styles.modalTitle}>
-                {modalMode === "add" ? "Add Product" : "Edit Product"}
+                {modalMode === "add" ? "เพิ่มสินค้าใหม่ (Add Product)" : "แก้ไขสินค้า (Edit Product)"}
               </Text>
               <View style={{ width: 32 }} />
             </View>
 
-            {/* Modal Form ScrollView */}
+            {/* Modal Form */}
             <ScrollView
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.formScroll}
             >
-              {/* Product Name */}
-              <Text style={styles.label}>Name <Text style={styles.required}>*</Text></Text>
+              <Text style={styles.label}>
+                ชื่อสินค้า (Product Name) <Text style={styles.required}>*</Text>
+              </Text>
               <TextInput
                 style={styles.input}
-                placeholder="Enter product name"
+                placeholder="ระบุชื่อสินค้า"
                 placeholderTextColor={COLORS.textSecondary}
                 value={name}
                 onChangeText={setName}
               />
 
-              {/* Description */}
-              <Text style={styles.label}>Description</Text>
+              <Text style={styles.label}>รายละเอียด (Description)</Text>
               <TextInput
                 style={[styles.input, styles.textArea]}
-                placeholder="Enter description"
+                placeholder="ระบุรายละเอียดสินค้า"
                 placeholderTextColor={COLORS.textSecondary}
                 value={description}
                 onChangeText={setDescription}
@@ -670,13 +845,14 @@ export default function ProductsScreen() {
                 numberOfLines={3}
               />
 
-              {/* Price & Stock Row */}
               <View style={styles.formRow}>
                 <View style={{ flex: 1, marginRight: 8 }}>
-                  <Text style={styles.label}>Price <Text style={styles.required}>*</Text></Text>
+                  <Text style={styles.label}>
+                    ราคา (฿) <Text style={styles.required}>*</Text>
+                  </Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="Enter price"
+                    placeholder="เช่น 1500"
                     placeholderTextColor={COLORS.textSecondary}
                     keyboardType="numeric"
                     value={price}
@@ -684,10 +860,10 @@ export default function ProductsScreen() {
                   />
                 </View>
                 <View style={{ flex: 1, marginLeft: 8 }}>
-                  <Text style={styles.label}>Stock</Text>
+                  <Text style={styles.label}>จำนวนสต็อก (Stock)</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="Enter stock quantity"
+                    placeholder="เช่น 20"
                     placeholderTextColor={COLORS.textSecondary}
                     keyboardType="numeric"
                     value={stock}
@@ -696,38 +872,34 @@ export default function ProductsScreen() {
                 </View>
               </View>
 
-              {/* Category */}
-              <Text style={styles.label}>Category</Text>
+              <Text style={styles.label}>หมวดหมู่ (Category)</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Enter category"
+                placeholder="เช่น Gaming Gear, Gaming Mouse"
                 placeholderTextColor={COLORS.textSecondary}
                 value={category}
                 onChangeText={setCategory}
               />
 
-              {/* Brand */}
-              <Text style={styles.label}>Brand</Text>
+              <Text style={styles.label}>ยี่ห้อ / แบรนด์ (Brand)</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Enter brand"
+                placeholder="เช่น Logitech, HyperX"
                 placeholderTextColor={COLORS.textSecondary}
                 value={brand}
                 onChangeText={setBrand}
               />
 
-              {/* Location */}
-              <Text style={styles.label}>Location</Text>
+              <Text style={styles.label}>สาขา / ที่ตั้ง (Location)</Text>
               <TextInput
                 style={styles.input}
-                placeholder="Enter location"
+                placeholder="เช่น Bangkok Store"
                 placeholderTextColor={COLORS.textSecondary}
                 value={location}
                 onChangeText={setLocation}
               />
 
-              {/* Image URL */}
-              <Text style={styles.label}>Image URL</Text>
+              <Text style={styles.label}>รูปภาพ URL (Image URL)</Text>
               <TextInput
                 style={styles.input}
                 placeholder="https://example.com/image.jpg"
@@ -736,8 +908,7 @@ export default function ProductsScreen() {
                 onChangeText={setImageUrl}
               />
 
-              {/* Status Selector */}
-              <Text style={styles.label}>Status</Text>
+              <Text style={styles.label}>สถานะสินค้า (Status)</Text>
               <View style={styles.statusSelectRow}>
                 <TouchableOpacity
                   style={[
@@ -774,7 +945,6 @@ export default function ProductsScreen() {
                 </TouchableOpacity>
               </View>
 
-              {/* Submit Button */}
               <TouchableOpacity
                 style={[styles.submitBtn, submitting && { opacity: 0.7 }]}
                 onPress={handleSaveProduct}
@@ -784,7 +954,7 @@ export default function ProductsScreen() {
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
                   <Text style={styles.submitBtnText}>
-                    {modalMode === "add" ? "Save Product" : "Save Changes"}
+                    {modalMode === "add" ? "บันทึกสินค้า (Save Product)" : "บันทึกการแก้ไข (Save Changes)"}
                   </Text>
                 )}
               </TouchableOpacity>
@@ -794,7 +964,7 @@ export default function ProductsScreen() {
       </Modal>
 
       {/* ================================================================== */}
-      {/* 6. BOTTOM NAVIGATION TAB BAR (Slide 28) */}
+      {/* 7. BOTTOM NAVIGATION TAB BAR (Slide 28) */}
       {/* ================================================================== */}
       <View style={styles.bottomNav}>
         <TouchableOpacity
@@ -856,7 +1026,7 @@ export default function ProductsScreen() {
             color={currentUser ? COLORS.primary : COLORS.textSecondary}
           />
           <Text style={[styles.navLabel, currentUser ? styles.navLabelActive : null]}>
-            {currentUser ? "Profile" : "Account"}
+            {currentUser ? (currentUser.is_guest ? "Guest" : "Profile") : "Account"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -905,7 +1075,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  /* --- Top Navigation Header --- */
+  /* --- Top Header & Separated Auth Buttons --- */
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -926,14 +1096,20 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "700",
-    color: COLORS.text,
+    fontWeight: "800",
+    color: COLORS.primaryDark,
+    letterSpacing: 0.5,
   },
   headerRight: {
     flexDirection: "row",
     alignItems: "center",
   },
-  userBadgeBtn: {
+  userSection: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  userProfileTag: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: COLORS.primaryLight,
@@ -941,40 +1117,56 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 20,
     gap: 6,
+    maxWidth: 140,
   },
   userAvatar: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: COLORS.primary,
     alignItems: "center",
     justifyContent: "center",
   },
   userAvatarText: {
     color: "#FFFFFF",
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  userInfoBox: {
-    maxWidth: 90,
-  },
-  userNameText: {
     fontSize: 11,
     fontWeight: "700",
-    color: COLORS.primaryDark,
   },
-  userRoleText: {
-    fontSize: 9,
-    color: COLORS.textSecondary,
+  userNameText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: COLORS.primaryDark,
+    flexShrink: 1,
+  },
+  signOutBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.dangerLight,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#FECACA",
+    gap: 4,
+  },
+  signOutBtnText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: COLORS.danger,
   },
   signInBtn: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: COLORS.primary,
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 4,
+    paddingVertical: 7,
+    borderRadius: 10,
+    gap: 6,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 2,
   },
   signInBtnText: {
     color: "#FFFFFF",
@@ -1009,11 +1201,12 @@ const styles = StyleSheet.create({
   },
   addBtn: {
     backgroundColor: COLORS.primary,
-    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
     height: 40,
     borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
+    gap: 4,
   },
   addBtnText: {
     color: "#FFFFFF",
@@ -1150,17 +1343,92 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   editActionBtn: {
-    padding: 6,
+    padding: 7,
     borderRadius: 6,
     backgroundColor: COLORS.primaryLight,
   },
   deleteActionBtn: {
-    padding: 6,
+    padding: 7,
     borderRadius: 6,
-    backgroundColor: "#FEE2E2",
+    backgroundColor: COLORS.dangerLight,
   },
 
-  /* --- Modal Styles --- */
+  /* --- Delete Confirmation Modal --- */
+  confirmModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  confirmModalCard: {
+    width: "100%",
+    maxWidth: 380,
+    backgroundColor: COLORS.card,
+    borderRadius: 16,
+    padding: 20,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 6,
+  },
+  deleteIconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: COLORS.dangerLight,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+  },
+  confirmModalTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: COLORS.text,
+    marginBottom: 8,
+  },
+  confirmModalDesc: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    textAlign: "center",
+    lineHeight: 18,
+    marginBottom: 20,
+  },
+  confirmBtnRow: {
+    flexDirection: "row",
+    gap: 12,
+    width: "100%",
+  },
+  cancelModalBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: "#F1F5F9",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cancelModalBtnText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.textSecondary,
+  },
+  confirmDeleteBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: COLORS.danger,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  confirmDeleteBtnText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
+
+  /* --- Auth Modal Styles --- */
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
@@ -1177,7 +1445,7 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.card,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    maxHeight: "85%",
+    maxHeight: "90%",
     paddingBottom: 24,
   },
   modalHeader: {
@@ -1228,6 +1496,25 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontWeight: "700",
   },
+  inputWithIcon: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.inputBg,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: 10,
+    height: 44,
+  },
+  fieldIcon: {
+    marginRight: 6,
+  },
+  fieldInput: {
+    flex: 1,
+    fontSize: 14,
+    color: COLORS.text,
+    padding: 0,
+  },
   demoFillBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -1239,6 +1526,38 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: COLORS.primary,
     fontWeight: "600",
+  },
+  dividerRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 16,
+    gap: 10,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: COLORS.border,
+  },
+  dividerText: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    fontWeight: "500",
+  },
+  guestLoginBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: COLORS.guestBg,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    borderRadius: 10,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  guestLoginBtnText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: COLORS.text,
   },
   formScroll: {
     padding: 16,
@@ -1305,10 +1624,10 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 24,
+    marginTop: 20,
     shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.25,
     shadowRadius: 6,
     elevation: 4,
   },

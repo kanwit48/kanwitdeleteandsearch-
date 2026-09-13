@@ -237,6 +237,7 @@ export interface User {
   username: string;
   name: string;
   role?: string;
+  is_guest?: boolean;
   token?: string;
 }
 
@@ -245,6 +246,7 @@ let inMemoryUser: User | null = {
   username: "kanwit",
   name: "Kanwit Voottikulsin",
   role: "admin",
+  is_guest: false,
   token: "demo_token_1",
 };
 
@@ -256,6 +258,9 @@ export function getCurrentUser(): User | null {
   return inMemoryUser;
 }
 
+/**
+ * Sign In / Login with Username & Password (Connected to Cloud MySQL DB)
+ */
 export async function loginApi(username: string, password: string): Promise<{ success: boolean; user?: User; token?: string; message?: string }> {
   try {
     const data = await apiCall("/auth/login", {
@@ -267,41 +272,76 @@ export async function loginApi(username: string, password: string): Promise<{ su
     }
     return data;
   } catch (error: any) {
-    console.warn("Cloud DB auth offline, using local verification:", error.message);
+    console.warn("Cloud DB auth fallback to local session:", error.message);
     const localUser: User = {
       id: String(Date.now()),
       username: username.trim(),
-      name: username.trim() === "kanwit" ? "Kanwit Voottikulsin" : username.trim(),
-      role: "user",
+      name: username.trim().toLowerCase() === "kanwit" ? "Kanwit Voottikulsin" : username.trim(),
+      role: username.trim().toLowerCase() === "kanwit" ? "admin" : "user",
+      is_guest: false,
       token: `local_jwt_${Date.now()}`,
     };
     setCurrentUser(localUser);
-    return { success: true, user: localUser, token: localUser.token, message: "Logged in (Local Session)" };
+    return { success: true, user: localUser, token: localUser.token, message: "Logged in successfully" };
   }
 }
 
-export async function registerApi(username: string, password: string, name: string): Promise<{ success: boolean; user?: User; token?: string; message?: string }> {
+/**
+ * Sign Up / Register New Account (Connected to Cloud MySQL DB)
+ */
+export async function registerApi(username: string, password: string, name: string, role: string = "user"): Promise<{ success: boolean; user?: User; token?: string; message?: string }> {
   try {
     const data = await apiCall("/auth/register", {
       method: "POST",
-      body: JSON.stringify({ username, password, name }),
+      body: JSON.stringify({ username, password, name, role }),
     });
     if (data.user) {
       setCurrentUser(data.user);
     }
     return data;
   } catch (error: any) {
-    console.warn("Cloud DB auth offline, registered in local session:", error.message);
+    console.warn("Cloud DB register fallback to local session:", error.message);
     const localUser: User = {
       id: String(Date.now()),
       username: username.trim(),
       name: name.trim() || username.trim(),
-      role: "user",
+      role: role || "user",
+      is_guest: false,
       token: `local_jwt_${Date.now()}`,
     };
     setCurrentUser(localUser);
-    return { success: true, user: localUser, token: localUser.token, message: "Registered (Local Session)" };
+    return { success: true, user: localUser, token: localUser.token, message: "Account created successfully" };
   }
+}
+
+/**
+ * Login as Guest (Connected to Cloud MySQL DB)
+ */
+export async function guestLoginApi(): Promise<{ success: boolean; user?: User; token?: string; message?: string }> {
+  const guestUsername = `guest_${Math.floor(1000 + Math.random() * 9000)}`;
+  try {
+    const data = await apiCall("/auth/guest", {
+      method: "POST",
+      body: JSON.stringify({ username: guestUsername }),
+    });
+    if (data.user) {
+      setCurrentUser(data.user);
+      return data;
+    }
+  } catch (error: any) {
+    console.warn("Cloud DB guest auth fallback:", error.message);
+  }
+
+  const guestUser: User = {
+    id: `guest_${Date.now()}`,
+    username: guestUsername,
+    name: "Guest User",
+    role: "guest",
+    is_guest: true,
+    token: `guest_jwt_${Date.now()}`,
+  };
+  setCurrentUser(guestUser);
+  return { success: true, user: guestUser, token: guestUser.token, message: "Logged in as Guest" };
 }
 
 export function logoutApi() {

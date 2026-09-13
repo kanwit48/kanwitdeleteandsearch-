@@ -1,27 +1,30 @@
 -- ============================================================================
 -- SQL Schema & Sample Data for Cloud MySQL Database
--- Course: Internet Programming (React Native + Cloud DB + Auth)
+-- Course: Internet Programming (React Native + Cloud DB + Auth + Search + Delete)
 -- Database: ip_std6730251417
 -- ============================================================================
 
--- 1. Table: users (Authentication - Login & Sign Up)
+-- 1. Table: users (Authentication - Login, Sign Up, and Guest Login)
 CREATE TABLE IF NOT EXISTS `users` (
   `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `username` VARCHAR(100) NOT NULL UNIQUE,
   `password` VARCHAR(255) NOT NULL,
   `name` VARCHAR(255) NOT NULL,
   `role` VARCHAR(50) DEFAULT 'user',
-  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  `is_guest` BOOLEAN DEFAULT FALSE,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `last_login` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Insert Default Demo Users
-INSERT INTO `users` (`username`, `password`, `name`, `role`)
+-- Insert Default Demo Users (Admin, Standard User, and Guest)
+INSERT INTO `users` (`username`, `password`, `name`, `role`, `is_guest`)
 VALUES
-('kanwit', '123456', 'Kanwit Voottikulsin', 'admin'),
-('user1', '123456', 'Demo User', 'user')
-ON DUPLICATE KEY UPDATE `name`=VALUES(`name`);
+('kanwit', '123456', 'Kanwit Voottikulsin', 'admin', FALSE),
+('user1', '123456', 'Demo User', 'user', FALSE),
+('guest', 'guest', 'Guest Visitor', 'guest', TRUE)
+ON DUPLICATE KEY UPDATE `name`=VALUES(`name`), `role`=VALUES(`role`);
 
--- 2. Table: products (Inventory & Catalog)
+-- 2. Table: products (Inventory & Catalog - Add, Edit, Delete, Search)
 CREATE TABLE IF NOT EXISTS `products` (
   `id` INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
   `name` VARCHAR(255) NOT NULL,
