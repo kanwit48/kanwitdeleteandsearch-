@@ -130,6 +130,53 @@ export async function fetchProductsApi(): Promise<Product[]> {
     return FALLBACK_CLOUD_PRODUCTS;
   }
 }
+
+/**
+ * Add / Insert New Product to Cloud Database (Slide 4, 5, 7)
+ */
+export async function createProductApi(product: Partial<Product>): Promise<{ success: boolean; productId?: number; message?: string }> {
+  try {
+    const data = await apiCall("/products", {
+      method: "POST",
+      body: JSON.stringify(product),
+    });
+    return data;
+  } catch (error: any) {
+    console.error("Error creating product:", error.message);
+    throw error;
+  }
+}
+
+/**
+ * Edit / Update Existing Product in Cloud Database (Slide 8, 9)
+ */
+export async function updateProductApi(id: string | number, product: Partial<Product>): Promise<{ success: boolean; message?: string }> {
+  try {
+    const data = await apiCall(`/products/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(product),
+    });
+    return data;
+  } catch (error: any) {
+    console.error("Error updating product:", error.message);
+    throw error;
+  }
+}
+
+/**
+ * Delete Product from Cloud Database
+ */
+export async function deleteProductApi(id: string | number): Promise<{ success: boolean; message?: string }> {
+  try {
+    const data = await apiCall(`/products/${id}`, {
+      method: "DELETE",
+    });
+    return data;
+  } catch (error: any) {
+    console.error("Error deleting product:", error.message);
+    throw error;
+  }
+}
 // --- User Management (Slide 22, 25) ---
 export interface User {
   id: string;
