@@ -24,7 +24,7 @@ export interface Product {
 
 // --- Cloud Server Configuration (Slide 27) ---
 export const SERVER_HOST = "119.59.102.161";
-export const SERVER_PORT = "3012"; // Change to your assigned student port
+export const SERVER_PORT = "3103"; // Assigned student port for std6730251417
 export const API_BASE_URL = `http://${SERVER_HOST}:${SERVER_PORT}/api`;
 
 // Default / Fallback Products (Slide 8, 9, 28)
