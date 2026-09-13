@@ -43,9 +43,9 @@ export interface Product {
   description: string;
 }
 
-// 2. URL สำหรับดึงไฟล์ JSON จาก GitHub
+// 2. URL สำหรับดึงไฟล์ JSON จาก GitHub (repo: kanwit48/productjson)
 const GITHUB_JSON_URL =
-  "https://raw.githubusercontent.com/kanwit48/kanwitinternetjson/main/products.json";
+  "https://raw.githubusercontent.com/kanwit48/productjson/main/products.json";
 
 // ข้อมูลสำรองเริ่มต้น (Fallback) หากยังไม่ได้ push ไฟล์ขึ้น GitHub หรือไม่มีอินเทอร์เน็ต
 const FALLBACK_PRODUCTS: Product[] = [
