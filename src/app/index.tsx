@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ============================================================================
  * Kanwit Gaming Gear Shop - React UI & Navigation + JSON + GitHub
  * ============================================================================
@@ -43,9 +43,9 @@ export interface Product {
   description: string;
 }
 
-// 2. URL สำหรับดึงไฟล์ JSON จาก GitHub (เปลี่ยน <USERNAME> และ <REPO> ตามของคุณ)
+// 2. URL สำหรับดึงไฟล์ JSON จาก GitHub
 const GITHUB_JSON_URL =
-  "https://raw.githubusercontent.com/deedee4647/kanwit/main/products.json";
+  "https://raw.githubusercontent.com/kanwit48/kanwitinternetjson/main/products.json";
 
 // ข้อมูลสำรองเริ่มต้น (Fallback) หากยังไม่ได้ push ไฟล์ขึ้น GitHub หรือไม่มีอินเทอร์เน็ต
 const FALLBACK_PRODUCTS: Product[] = [

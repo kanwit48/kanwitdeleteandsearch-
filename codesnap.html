@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>CodeSnap - index.tsx</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/typescript.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f72585 100%);
+      padding: 40px;
+      font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+      display: inline-block;
+      min-width: 100%;
+    }
+    .window {
+      background: #1e1e2e;
+      border-radius: 16px;
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+      max-width: 1050px;
+      margin: 0 auto;
+    }
+    .window-header {
+      background: #181825;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .dot {
+      width: 13px;
+      height: 13px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .dot.red { background: #ff5f56; }
+    .dot.yellow { background: #ffbd2e; }
+    .dot.green { background: #27c93f; }
+    .title {
+      color: #a6adc8;
+      font-size: 13px;
+      font-weight: 600;
+      margin-left: 12px;
+      letter-spacing: 0.5px;
+    }
+    .code-container {
+      display: flex;
+      padding: 20px 0;
+      background: #1e1e2e;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .line-numbers {
+      padding: 0 16px 0 20px;
+      text-align: right;
+      color: #585b70;
+      user-select: none;
+      font-size: 13px;
+      line-height: 1.55;
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    pre {
+      margin: 0;
+      padding: 0 24px;
+      background: transparent !important;
+      overflow: visible;
+    }
+    code {
+      background: transparent !important;
+      font-family: inherit !important;
+      font-size: 13px !important;
+      line-height: 1.55 !important;
+      padding: 0 !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="window" id="capture">
+    <div class="window-header">
+      <span class="dot red"></span>
+      <span class="dot yellow"></span>
+      <span class="dot green"></span>
+      <span class="title">kanwit/src/app/index.tsx</span>
+    </div>
+    <div class="code-container">
+      <div class="line-numbers" id="line-numbers"></div>
+      <pre><code class="language-typescript" id="code">﻿import React, { useState, useEffect } from &quot;react&quot;;
+import {
+  FlatList,
+  Image,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ScrollView,
+  StatusBar,
+  Alert,
+} from &quot;react-native&quot;;
+import { SafeAreaView } from &quot;react-native-safe-area-context&quot;;
+import { Ionicons, MaterialCommunityIcons } from &quot;@expo/vector-icons&quot;;
+import * as SplashScreen from &quot;expo-splash-screen&quot;;
+import { PRODUCTS, ProductItem } from &quot;@/constants/products&quot;;
+
+const COLORS = {
+  primary: &quot;#6366F1&quot;,
+  primaryDark: &quot;#4F46E5&quot;,
+  primaryLight: &quot;#EEF2FF&quot;,
+  accent: &quot;#EC4899&quot;,
+  background: &quot;#F8FAFC&quot;,
+  card: &quot;#FFFFFF&quot;,
+  text: &quot;#0F172A&quot;,
+  textSecondary: &quot;#64748B&quot;,
+  border: &quot;#E2E8F0&quot;,
+  success: &quot;#10B981&quot;,
+  danger: &quot;#EF4444&quot;,
+};
+
+export default function HomeScreen() {
+  const [selectedCategory, setSelectedCategory] = useState&lt;string&gt;(&quot;All&quot;);
+  const [cartCount, setCartCount] = useState&lt;number&gt;(0);
+  const [activeTab, setActiveTab] = useState&lt;string&gt;(&quot;home&quot;);
+
+  useEffect(() =&gt; {
+    SplashScreen.hideAsync().catch(() =&gt; {});
+  }, []);
+
+  const filteredProducts =
+    selectedCategory === &quot;All&quot;
+      ? PRODUCTS
+      : PRODUCTS.filter((item) =&gt; item.category === selectedCategory);
+
+  const categories = [
+    { id: &quot;All&quot;, label: &quot;ทั้งหมด (All)&quot;, iconType: &quot;ion&quot;, icon: &quot;grid-outline&quot; },
+    { id: &quot;Gaming Mouse&quot;, label: &quot;เมาส์&quot;, iconType: &quot;mc&quot;, icon: &quot;mouse&quot; },
+    { id: &quot;Gaming Headset&quot;, label: &quot;หูฟัง&quot;, iconType: &quot;ion&quot;, icon: &quot;headset-outline&quot; },
+    { id: &quot;Gaming Keyboard&quot;, label: &quot;คีย์บอร์ด&quot;, iconType: &quot;mc&quot;, icon: &quot;keyboard-outline&quot; },
+  ];
+
+  const handleAddToCart = (product: ProductItem) =&gt; {
+    setCartCount((prev) =&gt; prev + 1);
+    Alert.alert(&quot;เพิ่มสินค้าลงตะกร้าแล้ว&quot;, `เพิ่ม &quot;${product.name}&quot; เรียบร้อยแล้ว`);
+  };
+
+  const handleProductDetail = (product: ProductItem) =&gt; {
+    Alert.alert(
+      product.name,
+      `${product.description}\n\nราคา: ฿${product.price.toLocaleString()}\nสถานะ: ${product.stockStatus}`,
+      [
+        { text: &quot;ปิด&quot;, style: &quot;cancel&quot; },
+        { text: &quot;เพิ่มลงตะกร้า&quot;, onPress: () =&gt; handleAddToCart(product) },
+      ]
+    );
+  };
+
+  return (
+    &lt;SafeAreaView style={styles.container} edges={[&quot;top&quot;, &quot;left&quot;, &quot;right&quot;]}&gt;
+      &lt;StatusBar barStyle=&quot;dark-content&quot; backgroundColor={COLORS.card} /&gt;
+
+      {/* 1. TOP NAVIGATION HEADER */}
+      &lt;View style={styles.topNav}&gt;
+        &lt;TouchableOpacity style={styles.iconBtn}&gt;
+          &lt;Ionicons name=&quot;menu-outline&quot; size={24} color={COLORS.text} /&gt;
+        &lt;/TouchableOpacity&gt;
+
+        &lt;View style={styles.brandContainer}&gt;
+          &lt;View style={styles.logoBadge}&gt;
+            &lt;Ionicons name=&quot;game-controller&quot; size={16} color=&quot;#FFF&quot; /&gt;
+          &lt;/View&gt;
+          &lt;View&gt;
+            &lt;Text style={styles.brandTitle}&gt;KANWIT GAMING&lt;/Text&gt;
+            &lt;Text style={styles.brandSub}&gt;Official Gear Store&lt;/Text&gt;
+          &lt;/View&gt;
+        &lt;/View&gt;
+
+        &lt;View style={styles.topRightActions}&gt;
+          &lt;TouchableOpacity style={styles.iconBtn}&gt;
+            &lt;Ionicons name=&quot;notifications-outline&quot; size={20} color={COLORS.text} /&gt;
+            &lt;View style={styles.notifDot} /&gt;
+          &lt;/TouchableOpacity&gt;
+          &lt;TouchableOpacity
+            style={[styles.iconBtn, styles.cartBtn]}
+            onPress={() =&gt; Alert.alert(&quot;ตะกร้าสินค้า&quot;, `มีสินค้าทั้งหมด ${cartCount} ชิ้น`)}
+          &gt;
+            &lt;Ionicons name=&quot;cart-outline&quot; size={20} color={COLORS.primary} /&gt;
+            {cartCount &gt; 0 &amp;&amp; (
+              &lt;View style={styles.cartBadge}&gt;
+                &lt;Text style={styles.cartBadgeText}&gt;{cartCount}&lt;/Text&gt;
+              &lt;/View&gt;
+            )}
+          &lt;/TouchableOpacity&gt;
+        &lt;/View&gt;
+      &lt;/View&gt;
+
+      {/* 2. PRODUCT CATALOGUE */}
+      &lt;FlatList
+        data={filteredProducts}
+        keyExtractor={(item) =&gt; item.id}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContent}
+        ListHeaderComponent={
+          &lt;View&gt;
+            {/* Category Filter Pills */}
+            &lt;View style={styles.categorySection}&gt;
+              &lt;ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.catList}&gt;
+                {categories.map((cat) =&gt; {
+                  const isSelected = selectedCategory === cat.id;
+                  return (
+                    &lt;TouchableOpacity
+                      key={cat.id}
+                      style={[styles.catChip, isSelected &amp;&amp; styles.catChipActive]}
+                      onPress={() =&gt; setSelectedCategory(cat.id)}
+                    &gt;
+                      {cat.iconType === &quot;ion&quot; ? (
+                        &lt;Ionicons name={cat.icon as any} size={15} color={isSelected ? &quot;#FFF&quot; : COLORS.textSecondary} /&gt;
+                      ) : (
+                        &lt;MaterialCommunityIcons name={cat.icon as any} size={15} color={isSelected ? &quot;#FFF&quot; : COLORS.textSecondary} /&gt;
+                      )}
+                      &lt;Text style={[styles.catChipText, isSelected &amp;&amp; styles.catChipTextActive]}&gt;{cat.label}&lt;/Text&gt;
+                    &lt;/TouchableOpacity&gt;
+                  );
+                })}
+              &lt;/ScrollView&gt;
+            &lt;/View&gt;
+
+            &lt;View style={styles.sectionHeader}&gt;
+              &lt;Text style={styles.sectionTitle}&gt;รายการสินค้าแนะนำ ({filteredProducts.length})&lt;/Text&gt;
+              &lt;View style={styles.stockBadge}&gt;
+                &lt;Text style={styles.stockBadgeText}&gt;แท้ 100% ประกันศูนย์&lt;/Text&gt;
+              &lt;/View&gt;
+            &lt;/View&gt;
+          &lt;/View&gt;
+        }
+        renderItem={({ item }) =&gt; (
+          &lt;View style={styles.card}&gt;
+            &lt;TouchableOpacity style={styles.imgWrap} onPress={() =&gt; handleProductDetail(item)}&gt;
+              &lt;Image source={item.image} style={styles.productImg} resizeMode=&quot;contain&quot; /&gt;
+              {item.originalPrice &amp;&amp; (
+                &lt;View style={styles.discountBadge}&gt;
+                  &lt;Text style={styles.discountText}&gt;
+                    ลด {Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)}%
+                  &lt;/Text&gt;
+                &lt;/View&gt;
+              )}
+            &lt;/TouchableOpacity&gt;
+
+            &lt;View style={styles.cardBody}&gt;
+              &lt;View style={styles.metaRow}&gt;
+                &lt;View style={styles.catTag}&gt;
+                  &lt;Text style={styles.catTagText}&gt;{item.category}&lt;/Text&gt;
+                &lt;/View&gt;
+                &lt;Text style={styles.brandText}&gt;{item.brand}&lt;/Text&gt;
+              &lt;/View&gt;
+
+              &lt;TouchableOpacity onPress={() =&gt; handleProductDetail(item)}&gt;
+                &lt;Text style={styles.productName} numberOfLines={2}&gt;{item.name}&lt;/Text&gt;
+              &lt;/TouchableOpacity&gt;
+
+              &lt;Text style={styles.descText} numberOfLines={2}&gt;{item.description}&lt;/Text&gt;
+
+              &lt;View style={styles.ratingRow}&gt;
+                &lt;Ionicons name=&quot;star&quot; size={13} color=&quot;#FBBF24&quot; /&gt;
+                &lt;Text style={styles.ratingScore}&gt;{item.rating.toFixed(1)}&lt;/Text&gt;
+                &lt;Text style={styles.reviewCount}&gt;({item.reviewsCount} รีวิว)&lt;/Text&gt;
+                &lt;Text style={styles.dot}&gt;•&lt;/Text&gt;
+                &lt;Text style={styles.stockText}&gt;{item.stockStatus}&lt;/Text&gt;
+              &lt;/View&gt;
+
+              &lt;View style={styles.priceActionRow}&gt;
+                &lt;View style={styles.priceWrap}&gt;
+                  &lt;Text style={styles.currency}&gt;฿&lt;/Text&gt;
+                  &lt;Text style={styles.price}&gt;{item.price.toLocaleString()}&lt;/Text&gt;
+                  {item.originalPrice &amp;&amp; (
+                    &lt;Text style={styles.oldPrice}&gt;฿{item.originalPrice.toLocaleString()}&lt;/Text&gt;
+                  )}
+                &lt;/View&gt;
+                &lt;TouchableOpacity style={styles.addBtn} onPress={() =&gt; handleAddToCart(item)}&gt;
+                  &lt;Ionicons name=&quot;bag-add&quot; size={16} color=&quot;#FFF&quot; /&gt;
+                  &lt;Text style={styles.addBtnText}&gt;สั่งซื้อ&lt;/Text&gt;
+                &lt;/TouchableOpacity&gt;
+              &lt;/View&gt;
+            &lt;/View&gt;
+          &lt;/View&gt;
+        )}
+      /&gt;
+
+      {/* 3. BOTTOM NAVIGATION BAR */}
+      &lt;View style={styles.bottomNav}&gt;
+        &lt;TouchableOpacity style={styles.navTab} onPress={() =&gt; setActiveTab(&quot;home&quot;)}&gt;
+          &lt;Ionicons name={activeTab === &quot;home&quot; ? &quot;home&quot; : &quot;home-outline&quot;} size={22} color={activeTab === &quot;home&quot; ? COLORS.primary : COLORS.textSecondary} /&gt;
+          &lt;Text style={[styles.navLabel, activeTab === &quot;home&quot; &amp;&amp; styles.navLabelActive]}&gt;หน้าหลัก&lt;/Text&gt;
+          {activeTab === &quot;home&quot; &amp;&amp; &lt;View style={styles.activeBar} /&gt;}
+        &lt;/TouchableOpacity&gt;
+
+        &lt;TouchableOpacity style={styles.navTab} onPress={() =&gt; { setActiveTab(&quot;products&quot;); setSelectedCategory(&quot;All&quot;); }}&gt;
+          &lt;Ionicons name={activeTab === &quot;products&quot; ? &quot;grid&quot; : &quot;grid-outline&quot;} size={22} color={activeTab === &quot;products&quot; ? COLORS.primary : COLORS.textSecondary} /&gt;
+          &lt;Text style={[styles.navLabel, activeTab === &quot;products&quot; &amp;&amp; styles.navLabelActive]}&gt;สินค้า&lt;/Text&gt;
+          {activeTab === &quot;products&quot; &amp;&amp; &lt;View style={styles.activeBar} /&gt;}
+        &lt;/TouchableOpacity&gt;
+
+        &lt;TouchableOpacity style={styles.navTab} onPress={() =&gt; { setActiveTab(&quot;cart&quot;); Alert.alert(&quot;ตะกร้าสินค้า&quot;, `มีสินค้า ${cartCount} ชิ้น`); }}&gt;
+          &lt;View&gt;
+            &lt;Ionicons name={activeTab === &quot;cart&quot; ? &quot;cart&quot; : &quot;cart-outline&quot;} size={22} color={activeTab === &quot;cart&quot; ? COLORS.primary : COLORS.textSecondary} /&gt;
+            {cartCount &gt; 0 &amp;&amp; (
+              &lt;View style={styles.navCartBadge}&gt;&lt;Text style={styles.navCartText}&gt;{cartCount}&lt;/Text&gt;&lt;/View&gt;
+            )}
+          &lt;/View&gt;
+          &lt;Text style={[styles.navLabel, activeTab === &quot;cart&quot; &amp;&amp; styles.navLabelActive]}&gt;ตะกร้า&lt;/Text&gt;
+          {activeTab === &quot;cart&quot; &amp;&amp; &lt;View style={styles.activeBar} /&gt;}
+        &lt;/TouchableOpacity&gt;
+
+        &lt;TouchableOpacity style={styles.navTab} onPress={() =&gt; { setActiveTab(&quot;profile&quot;); Alert.alert(&quot;บัญชีผู้ใช้&quot;, &quot;เข้าสู่ระบบในชื่อ: Kanwit Store&quot;); }}&gt;
+          &lt;Ionicons name={activeTab === &quot;profile&quot; ? &quot;person&quot; : &quot;person-outline&quot;} size={22} color={activeTab === &quot;profile&quot; ? COLORS.primary : COLORS.textSecondary} /&gt;
+          &lt;Text style={[styles.navLabel, activeTab === &quot;profile&quot; &amp;&amp; styles.navLabelActive]}&gt;โปรไฟล์&lt;/Text&gt;
+          {activeTab === &quot;profile&quot; &amp;&amp; &lt;View style={styles.activeBar} /&gt;}
+        &lt;/TouchableOpacity&gt;
+      &lt;/View&gt;
+    &lt;/SafeAreaView&gt;
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: COLORS.background },
+  topNav: { flexDirection: &quot;row&quot;, alignItems: &quot;center&quot;, justifyContent: &quot;space-between&quot;, backgroundColor: COLORS.card, paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: COLORS.border, elevation: 3 },
+  brandContainer: { flexDirection: &quot;row&quot;, alignItems: &quot;center&quot;, gap: 8 },
+  logoBadge: { width: 32, height: 32, borderRadius: 8, backgroundColor: COLORS.primary, justifyContent: &quot;center&quot;, alignItems: &quot;center&quot; },
+  brandTitle: { fontSize: 15, fontWeight: &quot;800&quot;, color: COLORS.text, letterSpacing: 0.5 },
+  brandSub: { fontSize: 10, color: COLORS.textSecondary, fontWeight: &quot;500&quot; },
+  topRightActions: { flexDirection: &quot;row&quot;, alignItems: &quot;center&quot;, gap: 8 },
+  iconBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.background, justifyContent: &quot;center&quot;, alignItems: &quot;center&quot;, position: &quot;relative&quot; },
+  cartBtn: { backgroundColor: COLORS.primaryLight },
+  notifDot: { position: &quot;absolute&quot;, top: 7, right: 7, width: 7, height: 7, borderRadius: 4, backgroundColor: COLORS.accent },
+  cartBadge: { position: &quot;absolute&quot;, top: -2, right: -2, backgroundColor: COLORS.accent, borderRadius: 9, minWidth: 16, height: 16, justifyContent: &quot;center&quot;, alignItems: &quot;center&quot;, paddingHorizontal: 3 },
+  cartBadgeText: { color: &quot;#FFF&quot;, fontSize: 9, fontWeight: &quot;700&quot; },
+  listContent: { padding: 16, maxWidth: 800, width: &quot;100%&quot;, alignSelf: &quot;center&quot; },
+  categorySection: { marginBottom: 12 },
+  catList: { gap: 8, paddingBottom: 4 },
+  catChip: { flexDirection: &quot;row&quot;, alignItems: &quot;center&quot;, gap: 5, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 18, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border },
+  catChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  catChipText: { fontSize: 12, fontWeight: &quot;600&quot;, color: COLORS.textSecondary },
+  catChipTextActive: { color: &quot;#FFF&quot; },
+  sectionHeader: { flexDirection: &quot;row&quot;, justifyContent: &quot;space-between&quot;, alignItems: &quot;center&quot;, marginBottom: 12 },
+  sectionTitle: { fontSize: 15, fontWeight: &quot;700&quot;, color: COLORS.text },
+  stockBadge: { backgroundColor: &quot;#DCFCE7&quot;, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  stockBadgeText: { color: &quot;#15803D&quot;, fontSize: 11, fontWeight: &quot;700&quot; },
+  card: { backgroundColor: COLORS.card, borderRadius: 14, marginBottom: 14, borderWidth: 1, borderColor: COLORS.border, overflow: &quot;hidden&quot;, elevation: 2 },
+  imgWrap: { width: &quot;100%&quot;, height: 180, backgroundColor: &quot;#F1F5F9&quot;, justifyContent: &quot;center&quot;, alignItems: &quot;center&quot;, padding: 12, position: &quot;relative&quot; },
+  productImg: { width: &quot;100%&quot;, height: &quot;100%&quot; },
+  discountBadge: { position: &quot;absolute&quot;, top: 10, right: 10, backgroundColor: COLORS.danger, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 5 },
+  discountText: { color: &quot;#FFF&quot;, fontSize: 10, fontWeight: &quot;800&quot; },
+  cardBody: { padding: 14 },
+  metaRow: { flexDirection: &quot;row&quot;, justifyContent: &quot;space-between&quot;, alignItems: &quot;center&quot;, marginBottom: 6 },
+  catTag: { backgroundColor: COLORS.primaryLight, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 5 },
+  catTagText: { color: COLORS.primaryDark, fontSize: 10, fontWeight: &quot;700&quot; },
+  brandText: { fontSize: 11, fontWeight: &quot;600&quot;, color: COLORS.textSecondary },
+  productName: { fontSize: 15, fontWeight: &quot;700&quot;, color: COLORS.text, lineHeight: 20, marginBottom: 4 },
+  descText: { fontSize: 12, color: COLORS.textSecondary, lineHeight: 16, marginBottom: 8 },
+  ratingRow: { flexDirection: &quot;row&quot;, alignItems: &quot;center&quot;, gap: 5, marginBottom: 10 },
+  ratingScore: { fontSize: 12, fontWeight: &quot;700&quot;, color: COLORS.text },
+  reviewCount: { fontSize: 11, color: COLORS.textSecondary },
+  dot: { color: COLORS.textSecondary, fontSize: 10 },
+  stockText: { fontSize: 11, color: COLORS.success, fontWeight: &quot;600&quot; },
+  priceActionRow: { flexDirection: &quot;row&quot;, justifyContent: &quot;space-between&quot;, alignItems: &quot;center&quot;, paddingTop: 10, borderTopWidth: 1, borderTopColor: COLORS.border },
+  priceWrap: { flexDirection: &quot;row&quot;, alignItems: &quot;baseline&quot;, gap: 2 },
+  currency: { fontSize: 14, fontWeight: &quot;700&quot;, color: COLORS.primary },
+  price: { fontSize: 19, fontWeight: &quot;800&quot;, color: COLORS.primary },
+  oldPrice: { fontSize: 12, color: COLORS.textSecondary, textDecorationLine: &quot;line-through&quot;, marginLeft: 5 },
+  addBtn: { flexDirection: &quot;row&quot;, alignItems: &quot;center&quot;, gap: 5, backgroundColor: COLORS.primary, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8 },
+  addBtnText: { color: &quot;#FFF&quot;, fontSize: 13, fontWeight: &quot;700&quot; },
+  bottomNav: { flexDirection: &quot;row&quot;, backgroundColor: COLORS.card, borderTopWidth: 1, borderTopColor: COLORS.border, paddingVertical: 8, elevation: 8 },
+  navTab: { flex: 1, alignItems: &quot;center&quot;, justifyContent: &quot;center&quot;, paddingVertical: 3, position: &quot;relative&quot; },
+  navLabel: { fontSize: 10, marginTop: 3, color: COLORS.textSecondary, fontWeight: &quot;500&quot; },
+  navLabelActive: { color: COLORS.primary, fontWeight: &quot;700&quot; },
+  activeBar: { position: &quot;absolute&quot;, bottom: -4, width: 18, height: 3, borderRadius: 2, backgroundColor: COLORS.primary },
+  navCartBadge: { position: &quot;absolute&quot;, top: -3, right: -6, backgroundColor: COLORS.accent, borderRadius: 7, minWidth: 14, height: 14, justifyContent: &quot;center&quot;, alignItems: &quot;center&quot;, paddingHorizontal: 2 },
+  navCartText: { color: &quot;#FFF&quot;, fontSize: 8, fontWeight: &quot;700&quot; },
+});</code></pre>
+    </div>
+  </div>
+
+  <script>
+    hljs.highlightAll();
+    const codeEl = document.getElementById('code');
+    const lineCount = codeEl.innerText.split('\n').length;
+    const lineNumbersEl = document.getElementById('line-numbers');
+    let nums = '';
+    for (let i = 1; i <= lineCount; i++) {
+      nums += i + '<br>';
+    }
+    lineNumbersEl.innerHTML = nums;
+  </script>
+</body>
+</html>
